@@ -1,33 +1,34 @@
 "use client";
 
-import type { Jersey, SiteSettings, Size } from "@/lib/types";
+import type { Product } from "@/lib/types";
 import { buildOrderMessage, buildWhatsappLink } from "@/lib/whatsapp";
+import { WHATSAPP_NUMBER, ORDER_MESSAGE_TEMPLATE } from "@/lib/config";
 
 export function OrderButton({
-  jersey,
-  settings,
+  product,
   selectedSize,
   pageUrl,
 }: {
-  jersey: Jersey;
-  settings: SiteSettings;
-  selectedSize: Size | null;
+  product: Product;
+  selectedSize: string | null;
   pageUrl: string;
 }) {
-  const disabled = selectedSize === null;
+  const soldOut = !product.inStock;
+  const disabled = soldOut || selectedSize === null;
 
   const href = disabled
     ? undefined
     : buildWhatsappLink(
-        settings.whatsappNumber,
-        buildOrderMessage(settings.orderMessageTemplate, {
-          team: jersey.team,
-          kit: jersey.kitType,
+        WHATSAPP_NUMBER,
+        buildOrderMessage(ORDER_MESSAGE_TEMPLATE, {
+          name: product.name,
           size: selectedSize,
-          price: jersey.price,
+          price: product.price,
           link: pageUrl,
         }),
       );
+
+  const label = soldOut ? "Sold Out" : selectedSize === null ? "Select a size" : "Order on WhatsApp";
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-gz-bg/95 p-4 backdrop-blur">
@@ -38,12 +39,10 @@ export function OrderButton({
         aria-disabled={disabled}
         onClick={(e) => disabled && e.preventDefault()}
         className={`flex min-h-12 w-full items-center justify-center rounded-full text-base font-extrabold transition-colors duration-200 ${
-          disabled
-            ? "cursor-not-allowed bg-white/10 text-white/40"
-            : "bg-gz-whatsapp text-black"
+          disabled ? "cursor-not-allowed bg-white/10 text-white/40" : "bg-gz-whatsapp text-black"
         }`}
       >
-        {disabled ? "Select a size" : "Order on WhatsApp"}
+        {label}
       </a>
     </div>
   );

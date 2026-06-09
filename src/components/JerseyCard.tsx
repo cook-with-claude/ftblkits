@@ -1,22 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Jersey } from "@/lib/types";
+import type { Product } from "@/lib/types";
 import { isSoldOut } from "@/lib/catalog";
 
-export function JerseyCard({ jersey }: { jersey: Jersey }) {
-  const soldOut = isSoldOut(jersey);
-  const photo = jersey.photos[0];
+export function JerseyCard({ product }: { product: Product }) {
+  const soldOut = isSoldOut(product);
 
   return (
     <Link
-      href={`/jersey/${jersey.slug}`}
+      href={`/jersey/${product.id}`}
       className="group relative block overflow-hidden rounded-2xl bg-gz-surface transition-transform duration-200 active:scale-[0.98]"
     >
       <div className="relative aspect-square">
-        {photo && (
+        {product.imageUrl && (
           <Image
-            src={photo.url}
-            alt={photo.alt}
+            src={product.imageUrl}
+            alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, 25vw"
             className="object-cover"
@@ -31,21 +30,21 @@ export function JerseyCard({ jersey }: { jersey: Jersey }) {
         )}
       </div>
       <div className="p-3">
-        <h3 className="font-[family-name:var(--font-display)] text-base uppercase leading-tight">{jersey.team}</h3>
-        <p className="text-xs font-extrabold uppercase tracking-wide text-gz-red">{jersey.kitType}</p>
-        <p className="mt-1 text-sm font-bold">${jersey.price}</p>
-        <ul className="mt-2 flex gap-1" aria-label="Size availability">
-          {jersey.sizes.map((s) => (
-            <li
-              key={s.size}
-              className={`flex h-5 w-6 items-center justify-center rounded text-[10px] font-bold ${
-                s.inStock ? "bg-white/10 text-white" : "bg-white/5 text-white/40 line-through"
-              }`}
-            >
-              {s.size}
-            </li>
-          ))}
-        </ul>
+        <h3 className="font-[family-name:var(--font-display)] text-base uppercase leading-tight">{product.name}</h3>
+        <p className="text-xs font-extrabold uppercase tracking-wide text-gz-red">{product.country}</p>
+        <p className="mt-1 text-sm font-bold">${product.price}</p>
+        {product.sizes.length > 0 && (
+          <ul className="mt-2 flex flex-wrap gap-1" aria-label="Available sizes">
+            {product.sizes.map((size) => (
+              <li
+                key={size}
+                className="flex h-5 min-w-6 items-center justify-center rounded bg-white/10 px-1 text-[10px] font-bold text-white"
+              >
+                {size}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </Link>
   );

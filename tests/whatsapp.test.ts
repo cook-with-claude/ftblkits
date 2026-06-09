@@ -3,16 +3,15 @@ import { buildOrderMessage, buildWhatsappLink } from "@/lib/whatsapp";
 
 describe("buildOrderMessage", () => {
   it("substitutes all tokens", () => {
-    const tpl = "Hi GoalZone! I'd like to order: {team} - {kit} - Size {size}. ${price}. {link}";
+    const tpl = "Hi GoalZone! I'd like to order: {name} - Size {size}. ${price}. {link}";
     const msg = buildOrderMessage(tpl, {
-      team: "Argentina",
-      kit: "Home",
+      name: "Argentina Home",
       size: "L",
       price: 28,
-      link: "https://goalzone.example/jersey/argentina-home",
+      link: "https://goalzone.example/jersey/abc",
     });
     expect(msg).toBe(
-      "Hi GoalZone! I'd like to order: Argentina - Home - Size L. $28. https://goalzone.example/jersey/argentina-home",
+      "Hi GoalZone! I'd like to order: Argentina Home - Size L. $28. https://goalzone.example/jersey/abc",
     );
   });
 });

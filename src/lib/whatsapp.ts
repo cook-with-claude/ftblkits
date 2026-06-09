@@ -1,6 +1,5 @@
 export interface OrderVars {
-  team: string;
-  kit: string;
+  name: string;
   size: string;
   price: number;
   link: string;
@@ -8,8 +7,7 @@ export interface OrderVars {
 
 export function buildOrderMessage(template: string, vars: OrderVars): string {
   return template
-    .replaceAll("{team}", vars.team)
-    .replaceAll("{kit}", vars.kit)
+    .replaceAll("{name}", vars.name)
     .replaceAll("{size}", vars.size)
     .replaceAll("{price}", String(vars.price))
     .replaceAll("{link}", vars.link);

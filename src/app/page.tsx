@@ -1,15 +1,16 @@
 import { Header } from "@/components/Header";
 import { CatalogBrowser } from "@/components/CatalogBrowser";
-import { getAllJerseys } from "@/lib/sanity/queries";
+import { getAllProducts } from "@/lib/supabase/queries";
 
-export const revalidate = 60; // fallback; webhook revalidation makes it near-instant
+// Always read live from Supabase so stock/listing changes appear immediately.
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const jerseys = await getAllJerseys();
+  const products = await getAllProducts();
   return (
     <main>
       <Header />
-      <CatalogBrowser jerseys={jerseys} />
+      <CatalogBrowser products={products} />
     </main>
   );
 }
