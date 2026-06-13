@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isSoldOut, filterProducts, sortProducts } from "@/lib/catalog";
+import { isUuid } from "@/lib/ids";
 import type { Product } from "@/lib/types";
 
 function make(overrides: Partial<Product> = {}): Product {
@@ -50,5 +51,16 @@ describe("sortProducts", () => {
     const arr = [make({ id: "a", inStock: false }), make({ id: "b", inStock: true })];
     sortProducts(arr);
     expect(arr.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("isUuid", () => {
+  it("accepts canonical UUID strings", () => {
+    expect(isUuid("692f94a4-6ad5-47dd-a155-b6fd0199d514")).toBe(true);
+  });
+
+  it("rejects malformed route params before they reach Supabase", () => {
+    expect(isUuid("not-a-uuid")).toBe(false);
+    expect(isUuid("692f94a4")).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { supabase } from "./client";
 import type { Product } from "@/lib/types";
+import { isUuid } from "@/lib/ids";
 
 const COLUMNS = "id, name, country, price, sizes, image_url, in_stock";
 
@@ -35,6 +36,8 @@ export async function getAllProducts(): Promise<Product[]> {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
+  if (!isUuid(id)) return null;
+
   const { data, error } = await supabase
     .from("products")
     .select(COLUMNS)
