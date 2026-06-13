@@ -53,3 +53,6 @@ next-env.d.ts
 
 # Misc
 *.pem
+
+# Netlify
+.netlify
