@@ -4,6 +4,43 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-13 — Codex review fix: harden the jersey detail route
+
+**Participants:** Nadim (owner) + Codex review + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** Malformed jersey URLs now return a clean 404 instead of a 500. Committed (`f45122e`).
+
+### 1. Context
+Codex ran a full audit + runtime smoke test (terminal checks plus a Playwright-driven browser
+pass). Most of what it flagged was environment noise, not code:
+- A **500 on `/jersey/[id]`** during testing turned out to be **stale dev-server worker state** —
+  cleared by restarting the dev server. Not a code bug.
+- A homepage **console error** was just the HMR WebSocket complaining because the page was opened
+  as `127.0.0.1` while Next's dev origin is `localhost`. Reopening via `localhost` cleared it.
+
+### 2. The real bug
+`/jersey/[id]` accepts arbitrary path text, but Supabase `id` is a **UUID column**. A non-UUID
+param (e.g. `/jersey/not-a-uuid`) made Supabase throw on the cast **before** the not-found path
+could run → HTTP 500.
+
+### 3. Fix (3 files, +20)
+- **`src/lib/ids.ts`** (new): pure `isUuid()` helper with a canonical UUID regex.
+- **`src/lib/supabase/queries.ts`**: `getProductById` guards with `if (!isUuid(id)) return null;`
+  before querying, so bad ids fall through to the existing not-found page.
+- **`tests/catalog.test.ts`**: added `isUuid` tests (accepts canonical UUID; rejects `not-a-uuid`
+  and a truncated id).
+
+### 4. Verification
+- `npm test` → **12 passing** (was 10; +2 for `isUuid`).
+- Runtime (Codex): homepage `200`, valid jersey `200`, malformed jersey now `404` (was 500).
+- Working tree clean after commit; Codex's stray Playwright artifact folder was removed.
+
+### 5. Open items
+Unchanged from 06-09: deploy to Vercel; stale Sanity-era specs/plans docs; stray `PHOTO-*.jpg`
+files in git; replace picsum placeholders with real photos via Supabase Storage.
+
+---
+
 ## 2026-06-09 — Project kickoff: brainstorm → spec → plan → build → Supabase pivot → merge
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)
