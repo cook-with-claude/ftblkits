@@ -4,6 +4,53 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-13 — Real catalog build: 15 kits, photos, descriptions, full verification
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** Live catalog is now 15 real kits with real photos, descriptions, and $25 pricing,
+verified end-to-end with Playwright. Committed (`e759717` + docs).
+
+### 1. Identified the kits
+Analysed the 15 `PHOTO-*.jpg` files visually (crest, brand, colourway). They map to **8 teams,
+mostly home + away**: Spain (H/A), Argentina (H/A), Brazil (H/A), France (H/A), Portugal (H/A),
+Germany (H/A), Morocco (H/A), England (H). The old DB had only 5 placeholder products, so this
+was a full catalog build, not a 5-row edit.
+
+### 2. Images → Supabase Storage
+Created a public **`kits`** bucket. Uploaded all 15 with clean names (`spain-home.jpg`, …) via the
+Storage REST API using a **temporary anon-insert policy** (no secret key needed), then dropped that
+policy — bucket is now **public-read only**. Public URLs return 200.
+
+### 3. Data + schema
+- Added a `description` column to `products`.
+- Replaced the 5 picsum placeholders with **15 real products**: name, country, Storage `image_url`,
+  `in_stock = true`, and a description (team + kit type + brand + colourway).
+- Defaults: **$25** for all (set this session), full **S–XXL** sizes, all in stock — team adjusts
+  in the dashboard.
+
+### 4. Code
+`description` threaded through the `Product` type, the Supabase query (`COLUMNS` + mapping), and
+surfaced on the jersey detail page. Removed the 15 now-redundant `PHOTO-*.jpg` files from the repo.
+
+### 5. Verification (Playwright, mobile viewport 390×844) — 19/19 passed
+Drove real Chromium through the full journey: home loads + 15 cards, logo, dark brand bg, **live
+search** (brazil→2, no-match→0), card→detail with name/image/price/description, **order CTA disabled
+until size picked**, correct `wa.me` link (name + size + price + page URL), **OG title+image** per
+jersey, **sold-out overlay** (toggled one out, reverted), malformed id→404, no console errors.
+Screenshots confirmed the "Immersive Matchday" look. Also `tsc` clean, 12 unit tests, `npm run build`
+green.
+
+### 6. Docs
+README updated (description column + `kits` bucket). Added "superseded" banners to the Sanity-era
+spec and plan pointing here. This entry added.
+
+### 7. Open items
+- **Deploy to Vercel** (still the main next step — needs GitHub + Vercel accounts).
+- Per-kit pricing later (all $25 for now, owner's call).
+
+---
+
 ## 2026-06-13 — Codex review fix: harden the jersey detail route
 
 **Participants:** Nadim (owner) + Codex review + Claude Code (Opus 4.8)

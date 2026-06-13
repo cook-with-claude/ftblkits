@@ -1,5 +1,12 @@
 # GoalZone Mobile Jersey Catalog Implementation Plan
 
+> ## ⚠️ Historical — executed then superseded (note added 2026-06-13)
+> This is the original **Sanity** implementation plan. It was executed in full (tasks 1–17),
+> then the project was **rebuilt on Supabase** in the same kickoff session — so Tasks 6–9 and 16
+> (Sanity schemas, client, GROQ, Studio, webhook) no longer reflect the codebase. Kept as a
+> historical record of how the build proceeded. For the current architecture see `README.md`
+> and the "Implementation note" in the design spec; for the full story see `docs/session-log.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a mobile-first, on-brand jersey catalog that hands customers off to WhatsApp to order, with a no-code Sanity dashboard for the team to manage listings and per-size stock.

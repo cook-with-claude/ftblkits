@@ -18,7 +18,11 @@ A single `products` table:
 | `sizes` | text[] | available sizes, e.g. `{S,M,L,XL}` |
 | `image_url` | text | public image URL (Supabase Storage or any host) |
 | `in_stock` | boolean | whole-product stock; `false` shows a "Sold Out" overlay |
+| `description` | text | short kit description shown on the detail page, e.g. "Spain home kit — adidas…" |
 | `created_at` | timestamptz | newest first |
+
+Kit photos live in a public Supabase Storage bucket named **`kits`** (public-read only).
+Image URLs follow `…/storage/v1/object/public/kits/<file>.jpg`.
 
 Row Level Security is on with a **public read-only** policy. There are no public write
 policies, so the catalog can be read with the publishable key but only edited from the
@@ -47,7 +51,9 @@ Open your project in the Supabase dashboard → **Table Editor** → `products`.
   image_url, in_stock = true → Save.
 - **Mark sold out:** open the row → set `in_stock` to `false` → Save. The whole card
   shows a "Sold Out" overlay.
-- **Images:** upload to Supabase **Storage** (make the bucket public), copy the public
-  URL into `image_url`. Any public HTTPS image URL works.
+- **Add a description:** fill the `description` column — it appears under the price on the
+  jersey detail page.
+- **Images:** upload to the public **`kits`** Storage bucket, copy the public URL into
+  `image_url`. Any public HTTPS image URL works.
 - **Change the WhatsApp number:** update `NEXT_PUBLIC_WHATSAPP_NUMBER` in Vercel env vars
   and redeploy (it rarely changes).

@@ -1,7 +1,27 @@
 # GoalZone — Mobile Jersey Catalog — Design Spec
 
 **Date:** 2026-06-09
-**Status:** Approved (design phase)
+**Status:** Approved (design phase) — **partially superseded, see note below**
+
+> ## ⚠️ Implementation note (updated 2026-06-13)
+> This spec describes the original **Sanity**-based design. The project was rebuilt on
+> **Supabase** during the kickoff session. The sections below are kept for design rationale,
+> but the following decisions changed in the shipped product (see `docs/session-log.md` for
+> the full record):
+>
+> | Spec (Sanity) | Shipped (Supabase) |
+> |---|---|
+> | Sanity CMS + embedded Studio at `/studio` | Single Postgres `products` table; admin = Supabase Table Editor |
+> | Per-size stock (`{size, inStock}[]`) | Whole-product `in_stock` boolean |
+> | 1–4 photos, swipeable gallery | One `image_url` per kit (photos in the public `kits` Storage bucket) |
+> | Confederation filter chips + search | Search-only (matches team **name or country**) |
+> | `kitType` field + slug, `/jersey/[slug]` | Kit type encoded in `name` ("Spain Home"); id-based `/jersey/[id]` |
+> | Webhook → on-demand revalidation | `force-dynamic` pages (edits show on next load) |
+> | "Featured" sort | In-stock-first sort |
+>
+> A `description` column was later added (shown on the detail page). The live catalog is
+> **15 kits across 8 teams** (Spain, Argentina, Brazil, France, Portugal, Germany, Morocco,
+> England), all priced at **$25**. The customer flow, brand, and WhatsApp handoff are unchanged.
 
 ## 1. Purpose
 
