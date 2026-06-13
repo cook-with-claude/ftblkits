@@ -2,7 +2,7 @@ import { supabase } from "./client";
 import type { Product } from "@/lib/types";
 import { isUuid } from "@/lib/ids";
 
-const COLUMNS = "id, name, country, price, sizes, image_url, in_stock";
+const COLUMNS = "id, name, country, price, sizes, image_url, in_stock, description";
 
 interface ProductRow {
   id: string;
@@ -12,6 +12,7 @@ interface ProductRow {
   sizes: string[] | null;
   image_url: string | null;
   in_stock: boolean;
+  description: string | null;
 }
 
 function toProduct(row: ProductRow): Product {
@@ -23,6 +24,7 @@ function toProduct(row: ProductRow): Product {
     sizes: row.sizes ?? [],
     imageUrl: row.image_url,
     inStock: row.in_stock,
+    description: row.description,
   };
 }
 

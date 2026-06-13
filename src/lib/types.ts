@@ -6,4 +6,5 @@ export interface Product {
   sizes: string[];
   imageUrl: string | null;
   inStock: boolean;
+  description: string | null;
 }

@@ -12,6 +12,7 @@ function make(overrides: Partial<Product> = {}): Product {
     sizes: overrides.sizes ?? ["S", "M", "L"],
     imageUrl: overrides.imageUrl ?? null,
     inStock: overrides.inStock ?? true,
+    description: overrides.description ?? null,
   };
 }
 

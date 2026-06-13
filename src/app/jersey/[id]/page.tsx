@@ -65,6 +65,10 @@ export default async function JerseyPage({
         <p className="mt-1 font-extrabold uppercase tracking-wide text-gz-red">{product.country}</p>
         <p className="mt-2 text-2xl font-bold">${product.price}</p>
 
+        {product.description && (
+          <p className="mt-3 text-sm leading-relaxed text-white/70">{product.description}</p>
+        )}
+
         <SizePicker product={product} pageUrl={pageUrl} />
       </div>
     </main>
