@@ -4,6 +4,48 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-13 — Deployed to Netlify (live)
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** Site is **live at https://the-goal-zone-kits.netlify.app**, building from GitHub on
+every push.
+
+### 1. Setup via the Netlify connector + CLI
+- Authenticated (Nadim, abdulmalaknadim@gmail.com). Created project, set the **4 env vars**
+  (`NEXT_PUBLIC_SUPABASE_URL`, `…_PUBLISHABLE_KEY`, `…_WHATSAPP_NUMBER`, `…_SITE_URL`).
+- Added `netlify.toml` (build `npm run build`, `@netlify/plugin-nextjs`) and `.netlify` to
+  `.gitignore`. Pushed `master` to `cook-with-claude/ftblkits` (commit `6d1af77`).
+
+### 2. Two blocked paths (environment, not our code)
+- **Connector build-proxy** (`npx @netlify/mcp … --proxy-path`) returned **500** three times,
+  server-side, even with a lean (gitignore-respecting) upload and proper config.
+- **Local `netlify deploy --build`** built fine (`.next` + functions bundled) but failed at
+  `@netlify/plugin-nextjs` **onPostBuild "Failed publishing static content"** — a known
+  OpenNext quirk on **Windows/OneDrive** that doesn't occur on Netlify's Linux builders.
+
+### 3. Fix: Git-connected site via API
+The API silently ignores connecting a repo to an *existing* site, but **creating a site with the
+repo at birth works**. Used `createSiteInTeam` with the existing **GitHub App installation
+135144914** (found on a sibling site) → new site **`the-goal-zone-kits`** (id
+`2041a9f2-34f5-43ba-9085-572f1edaff93`), Git-connected to `master`. Set the 4 env vars on it
+(SITE_URL → the new URL), triggered `createSiteBuild` → **ready**. Deleted the old bare
+`the-goal-zone` site; rename back was blocked (Netlify reserves freed names), so the live name
+stays `the-goal-zone-kits`.
+
+### 4. Live verification (curl)
+Homepage **200** (renders catalog), real jersey detail **200** (name, description "…kit —",
+Select size, Order on WhatsApp, **$25**, Supabase Storage image `spain-home.jpg`), malformed id
+→ **404**.
+
+### 5. Notes / next
+- **Continuous deploy is on** — every `git push` to `master` auto-builds on Linux.
+- Content edits (jerseys, prices, stock) happen in Supabase and show instantly; no redeploy.
+- Optional next: attach a **custom domain** in the Netlify dashboard and point the IG/TikTok bio
+  at it (currently the `.netlify.app` URL is bio-ready).
+
+---
+
 ## 2026-06-13 — Real catalog build: 15 kits, photos, descriptions, full verification
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)
