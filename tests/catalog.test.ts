@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSoldOut, filterProducts, sortProducts } from "@/lib/catalog";
+import { isSoldOut, filterProducts, sortProducts, listCountries, latestArrivals } from "@/lib/catalog";
 import { isUuid } from "@/lib/ids";
 import type { Product } from "@/lib/types";
 
@@ -38,6 +38,44 @@ describe("filterProducts", () => {
   });
   it("matches the country", () => {
     expect(filterProducts(list, { query: "france" }).map((p) => p.id)).toEqual(["fra"]);
+  });
+  it("filters by country when provided", () => {
+    expect(filterProducts(list, { query: "", country: "France" }).map((p) => p.id)).toEqual(["fra"]);
+  });
+  it("hides sold-out products when inStockOnly is set", () => {
+    const withSoldOut = [...list, make({ id: "bra", country: "Brazil", inStock: false })];
+    expect(filterProducts(withSoldOut, { query: "", inStockOnly: true }).map((p) => p.id)).toEqual([
+      "arg",
+      "fra",
+    ]);
+  });
+  it("combines query and country filters", () => {
+    const more = [...list, make({ id: "arg2", name: "Argentina Away", country: "Argentina" })];
+    expect(
+      filterProducts(more, { query: "away", country: "Argentina" }).map((p) => p.id),
+    ).toEqual(["arg2"]);
+  });
+});
+
+describe("listCountries", () => {
+  it("returns unique countries sorted alphabetically", () => {
+    const list = [
+      make({ id: "1", country: "France" }),
+      make({ id: "2", country: "Argentina" }),
+      make({ id: "3", country: "France" }),
+    ];
+    expect(listCountries(list)).toEqual(["Argentina", "France"]);
+  });
+});
+
+describe("latestArrivals", () => {
+  it("returns the first N products in incoming (newest-first) order", () => {
+    const list = [make({ id: "a" }), make({ id: "b" }), make({ id: "c" })];
+    expect(latestArrivals(list, 2).map((p) => p.id)).toEqual(["a", "b"]);
+  });
+  it("returns all products when fewer than the limit", () => {
+    const list = [make({ id: "a" })];
+    expect(latestArrivals(list, 5).map((p) => p.id)).toEqual(["a"]);
   });
 });
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { SizePicker } from "@/components/SizePicker";
@@ -38,38 +39,57 @@ export default async function JerseyPage({
   return (
     <main className="pb-28">
       <Header />
-      <div className="px-4">
-        <div className="relative mt-4 aspect-square overflow-hidden rounded-2xl bg-gz-surface">
-          {product.imageUrl && (
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100vw, 600px"
-              className="object-cover"
-              priority
-            />
-          )}
-          {!product.inStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-              <span className="-rotate-6 border-2 border-gz-red px-4 py-2 font-[family-name:var(--font-display)] text-2xl uppercase text-gz-red">
-                Sold Out
-              </span>
-            </div>
-          )}
+      <div className="mx-auto max-w-6xl px-4">
+        <Link
+          href="/#catalog"
+          className="mt-5 inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back to catalog
+        </Link>
+
+        <div className="mt-4 grid gap-8 md:grid-cols-2 md:items-start">
+          <div className="relative aspect-square overflow-hidden rounded-3xl border border-gz-border bg-gz-bg-alt">
+            {product.imageUrl && (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                className="object-cover"
+                priority
+              />
+            )}
+            {!product.inStock && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gz-navy-deep/60">
+                <span className="-rotate-6 rounded border-2 border-white px-4 py-2 font-[family-name:var(--font-display)] text-2xl uppercase text-white">
+                  Sold Out
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="font-extrabold uppercase tracking-wide text-gz-red">{product.country}</p>
+            <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl uppercase leading-none text-gz-navy sm:text-4xl">
+              {product.name}
+            </h1>
+            <p className="mt-3 text-2xl font-bold text-gz-text">${product.price}</p>
+
+            {product.description && (
+              <p className="mt-4 text-sm leading-relaxed text-gz-body">{product.description}</p>
+            )}
+
+            <SizePicker product={product} pageUrl={pageUrl} />
+
+            <div className="mt-6 h-1 w-16 rounded-full gz-flag-gradient" aria-hidden="true" />
+            <p className="mt-4 text-xs leading-relaxed text-gz-muted">
+              Cash on delivery across Lebanon · Order &amp; confirm sizing on WhatsApp.
+            </p>
+          </div>
         </div>
-
-        <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl uppercase leading-none">
-          {product.name}
-        </h1>
-        <p className="mt-1 font-extrabold uppercase tracking-wide text-gz-red">{product.country}</p>
-        <p className="mt-2 text-2xl font-bold">${product.price}</p>
-
-        {product.description && (
-          <p className="mt-3 text-sm leading-relaxed text-white/70">{product.description}</p>
-        )}
-
-        <SizePicker product={product} pageUrl={pageUrl} />
       </div>
     </main>
   );

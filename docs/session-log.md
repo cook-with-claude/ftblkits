@@ -4,6 +4,120 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-13 (evening) — Full UI redesign (World Cup 2026 theme), rebrand assets, image fixes, and a no-code admin panel
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** Large feature session. Complete visual overhaul to a **light World Cup 2026 theme**,
+new logo + favicon, two blurry kit photos replaced, and a brand-new **password-protected `/admin`
+panel** so shop managers can edit everything with zero code. **All work is on disk and builds
+clean, but is NOT yet committed and NOT yet deployed.** Three new env vars must be set before the
+admin panel works (see §7).
+
+### 1. UI overhaul — "The Goal Zone × World Cup 2026" (light theme)
+Goal: replace the bare dark catalog with a real storefront. Inspiration: goaldenlb.com structure;
+colours: official FIFA WC2026 palette (host nations — USA navy / Canada red / Mexico green).
+Decisions locked with the owner: **light/white theme**, **country-only structure (no schema change
+for collections)**, **keep "The Goal Zone" branding**.
+
+- **`globals.css`** — replaced the dark `--gz-*` tokens with a light palette: bg `#fff` / alt
+  `#f6f8fb`, brand navy `#1e2a78`, red `#e10600`, green `#00a86b`, magenta `#ec1e5c`, WhatsApp
+  `#25d366`. Added `.gz-flagbar` (hard tri-colour strip) + `.gz-flag-gradient` + `.gz-no-scrollbar`
+  utilities + reduced-motion block.
+- **`Header.tsx`** → real **navbar** (was just a centered logo): logo + desktop nav links (Home,
+  World Cup Kits, Shop by Country, New Arrivals as `/#anchor` links) + WhatsApp "Order" button +
+  mobile hamburger drawer. Inline SVG icons, no emojis.
+- **`Hero.tsx`** (new) — navy gradient banner, "Wear the tournament." headline, dual CTAs, accent
+  glows, tri-colour motif.
+- **`CatalogBrowser.tsx`** — added **New Arrivals** horizontal rail, **Shop by Country** chips
+  (filter + smooth-scroll to grid), **In-stock-only** toggle, restyled search, active-filter
+  count + clear, responsive grid `grid-cols-2 → sm:3 → lg:4`.
+- **`JerseyCard.tsx`** — light card, stable hover zoom + lift (no layout shift), country pill,
+  focus ring, sold-out restyle.
+- **`jersey/[id]/page.tsx`** — two-column desktop layout, back link, trust line.
+- **`SizePicker.tsx` / `OrderButton.tsx`** — relit to light theme (WhatsApp order model unchanged).
+- **`Footer.tsx`** (new) — logo, blurb, WhatsApp/IG/TikTok, "Cash on delivery in Lebanon",
+  disclaimer.
+- **`lib/catalog.ts`** — added `listCountries`, `latestArrivals`, extended `filterProducts`
+  (optional `country` + `inStockOnly`). **+5 new tests** in `tests/catalog.test.ts` (18 total).
+- **`layout.tsx`** — light body classes; metadata/brand unchanged.
+
+### 2. Social links
+Footer IG/TikTok now point to real accounts: **instagram.com/goalzone961/** and
+**tiktok.com/@goalzone961** (open in new tab).
+
+### 3. New logo + favicon
+- **Logo** (horizontal "GOALZONE" wordmark, owner-supplied JPEG, 1280×683) → overwrote
+  `public/logo.jpeg`; used in navbar (`h-9`/`sm:h-11`) and footer (`h-10`). Fixed `<Image>` w/h
+  props to the new ~1.87:1 ratio.
+- **Favicon** (circular navy GZ crest, owner-supplied PNG) — original had a solid near-white
+  background → showed white corners in the tab. Detected the navy circle bounds in the source
+  (center ≈ (626,619), r ≈ 547) via System.Drawing pixel scan, masked to a circle of r=542 with
+  **transparent corners**, cropped to 1084×1084. Wrote `src/app/icon.png` + `apple-icon.png`;
+  removed old `icon.jpeg` and `favicon.ico` so the new mark is the single source.
+
+### 4. WhatsApp "Order" icon centering
+The hand-rolled WhatsApp glyph was off-center in its viewBox. Replaced with the standard
+Simple-Icons WhatsApp path (evenly fills 24×24) in `Header.tsx` — fixes both the nav button and
+the mobile drawer button.
+
+### 5. Replaced two blurry kit photos (Supabase Storage)
+Owner supplied sharper shots for **France Home** (blue Nike polo) and **Morocco Away** (white Puma).
+Images live in the public `kits` bucket; only a public **read** policy existed, so:
+- Created a **temporary** `temp_anon_upload_kits` INSERT policy → uploaded both PNGs with the
+  publishable key (REST, `x-upsert`) to new filenames `france-home.png` / `morocco-away.png` (new
+  names = automatic cache-bust) → **dropped the temp policy**. Verified only `public_read_kits`
+  (SELECT) remains.
+- Updated `products.image_url` for the two rows (ids `b690722e-…` France Home, `1ff072ec-…`
+  Morocco Away). Verified both URLs return `200 image/png` with byte sizes matching the sources.
+
+### 6. No-code admin panel (`/admin`)  ⭐ main feature
+So managers can edit the catalog without Supabase or code. Decisions: **shared password** login;
+features = edit fields, add kits w/ photo upload, remove + hide, replace photo.
+
+- **DB migration** `add_hidden_to_products` — added `hidden boolean not null default false`. Public
+  queries (`getAllProducts`, `getProductById` in `lib/supabase/queries.ts`) now filter
+  `.eq("hidden", false)` so hidden kits vanish from the shop but stay in the DB.
+- **Auth** (`lib/admin/auth.ts`) — shared-password check (constant-time SHA-256 compare); session
+  is a signed `"<expiry>.<hmac>"` cookie (HMAC-SHA256 with `ADMIN_SESSION_SECRET`), httpOnly,
+  7-day, `secure` in prod. `verifySessionToken` fails closed if the secret is missing.
+- **Server-only service client** (`lib/supabase/admin.ts`) — uses `SUPABASE_SERVICE_ROLE_KEY`
+  (bypasses RLS); only imported by route handlers, never client code.
+- **Secure API** (`app/api/admin/*`, all `runtime=nodejs`, `force-dynamic`, all guarded by
+  `requireAdmin`): `login`, `logout`, `products` (GET list-all / POST create),
+  `products/[id]` (PATCH / DELETE), `upload` (multipart → `kits` bucket, returns public URL,
+  8 MB cap, ext allowlist). Shared helpers + validation in `lib/admin/server.ts`.
+- **UI** — `app/admin/page.tsx` (server, reads cookie → renders `AdminLogin` or `AdminDashboard`,
+  `noindex`). Client components: `AdminLogin`, `AdminDashboard` (search + list + logout +
+  "View shop"), `KitCard` (inline edit all fields, in-stock + hidden toggles, replace-photo,
+  save/delete), `AddKitForm` (new kit + photo upload), `api.ts` (fetch wrappers).
+- **`.env.example`** — documented the 3 new server-only vars.
+
+### 7. ⚠️ PENDING — required before admin works (owner to do)
+Not yet done; admin panel is non-functional until these are set:
+1. Add to **`.env.local`** (and to **Netlify** env, then redeploy):
+   - `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Project Settings → API → `service_role` (secret)
+   - `ADMIN_PASSWORD` = chosen manager password
+   - `ADMIN_SESSION_SECRET` = `c32a6cfa1d007b5a52661133c713ce1cea965840d16bc911f6b9bda42e02e9ea`
+     (generated this session)
+2. Restart dev server to load env (`taskkill /PID <pid> /F` then `npm run dev`).
+3. Visit `/admin`, log in, smoke-test add/edit/hide/delete/replace-photo.
+
+### 8. Verification status
+- `npx next build` ✅ clean (routes: `/`, `/admin`, `/api/admin/{login,logout,products,products/[id],upload}`, `/jersey/[id]`, `icon.png`, `apple-icon.png`).
+- `npx eslint src --max-warnings 0` ✅ clean.
+- `npx vitest run` ✅ 18/18.
+- Admin runtime flow **not yet exercised** (needs env vars). Mobile-friendliness reasoned from the
+  responsive code but **not yet visually tested** at phone widths.
+
+### 9. Not committed / next
+- **All of the above is uncommitted** on `master` (working tree dirty). Needs a commit + push to go
+  live (the redesign + image swaps will deploy; admin also needs Netlify env vars).
+- Possible follow-ups: delete a kit's storage image on delete (currently orphaned, harmless);
+  real mobile screenshot pass; optional per-person admin accounts later.
+
+---
+
 ## 2026-06-13 — Deployed to Netlify (live)
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)

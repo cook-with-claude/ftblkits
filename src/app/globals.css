@@ -1,23 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --gz-bg: #0a0a0a;
-  --gz-surface: #141414;
-  --gz-red: #e11212;
-  --gz-text: #ffffff;
+  /* Surfaces — light WC2026 theme */
+  --gz-bg: #ffffff;
+  --gz-bg-alt: #f6f8fb;
+  --gz-surface: #ffffff;
+  --gz-border: #e2e8f0;
+
+  /* Brand — World Cup 2026 (USA navy / Canada red / Mexico green) */
+  --gz-navy: #1e2a78;
+  --gz-navy-deep: #13205c;
+  --gz-red: #e10600;
+  --gz-green: #00a86b;
+  --gz-magenta: #ec1e5c;
+
+  /* Text */
+  --gz-text: #13205c;
+  --gz-body: #334155;
+  --gz-muted: #475569;
+
+  /* Ordering */
   --gz-whatsapp: #25d366;
 }
 
 @theme inline {
   --color-gz-bg: var(--gz-bg);
+  --color-gz-bg-alt: var(--gz-bg-alt);
   --color-gz-surface: var(--gz-surface);
+  --color-gz-border: var(--gz-border);
+  --color-gz-navy: var(--gz-navy);
+  --color-gz-navy-deep: var(--gz-navy-deep);
   --color-gz-red: var(--gz-red);
+  --color-gz-green: var(--gz-green);
+  --color-gz-magenta: var(--gz-magenta);
+  --color-gz-text: var(--gz-text);
+  --color-gz-body: var(--gz-body);
+  --color-gz-muted: var(--gz-muted);
   --color-gz-whatsapp: var(--gz-whatsapp);
 }
 
 html, body {
   background: var(--gz-bg);
   color: var(--gz-text);
+}
+
+/* Tri-color World Cup motif — hard-edged flag bar (Canada red / USA navy / Mexico green) */
+.gz-flagbar {
+  background: linear-gradient(
+    90deg,
+    var(--gz-red) 0%,
+    var(--gz-red) 33.33%,
+    var(--gz-navy) 33.33%,
+    var(--gz-navy) 66.66%,
+    var(--gz-green) 66.66%,
+    var(--gz-green) 100%
+  );
+}
+
+/* Smooth tri-color gradient — for accent text underlines / borders */
+.gz-flag-gradient {
+  background: linear-gradient(90deg, var(--gz-red), var(--gz-navy) 50%, var(--gz-green));
+}
+
+/* Hide scrollbar on horizontal rails while keeping scroll */
+.gz-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.gz-no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

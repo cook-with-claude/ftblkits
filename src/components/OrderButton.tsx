@@ -31,19 +31,23 @@ export function OrderButton({
   const label = soldOut ? "Sold Out" : selectedSize === null ? "Select a size" : "Order on WhatsApp";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-gz-bg/95 p-4 backdrop-blur">
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-disabled={disabled}
-        onClick={(e) => disabled && e.preventDefault()}
-        className={`flex min-h-12 w-full items-center justify-center rounded-full text-base font-extrabold transition-colors duration-200 ${
-          disabled ? "cursor-not-allowed bg-white/10 text-white/40" : "bg-gz-whatsapp text-black"
-        }`}
-      >
-        {label}
-      </a>
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gz-border bg-gz-bg/95 p-4 backdrop-blur">
+      <div className="mx-auto max-w-6xl">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-disabled={disabled}
+          onClick={(e) => disabled && e.preventDefault()}
+          className={`flex min-h-12 w-full items-center justify-center rounded-full text-base font-extrabold transition-opacity duration-200 ${
+            disabled
+              ? "cursor-not-allowed bg-gz-bg-alt text-gz-muted"
+              : "cursor-pointer bg-gz-whatsapp text-black hover:opacity-90"
+          }`}
+        >
+          {label}
+        </a>
+      </div>
     </div>
   );
 }

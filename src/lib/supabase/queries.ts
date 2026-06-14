@@ -32,6 +32,7 @@ export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(COLUMNS)
+    .eq("hidden", false)
     .order("created_at", { ascending: false });
   if (error) throw new Error(`Failed to load products: ${error.message}`);
   return (data ?? []).map((row) => toProduct(row as ProductRow));
@@ -44,6 +45,7 @@ export async function getProductById(id: string): Promise<Product | null> {
     .from("products")
     .select(COLUMNS)
     .eq("id", id)
+    .eq("hidden", false)
     .maybeSingle();
   if (error) throw new Error(`Failed to load product: ${error.message}`);
   return data ? toProduct(data as ProductRow) : null;
