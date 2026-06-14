@@ -4,6 +4,41 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-14 — Shipped the redesign (admin held back)
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** The 06-13 evening **World Cup 2026 redesign + rebrand is now committed and pushed**
+(`23582e8`), auto-deploying to https://the-goal-zone-kits.netlify.app. The **admin panel was
+intentionally left uncommitted** on disk per owner's call ("skip the admin page for now").
+
+### 1. Selective commit
+Staged only the redesign/rebrand files (Header, Hero, Footer, CatalogBrowser, JerseyCard, jersey
+detail, SizePicker, OrderButton, globals.css, layout, page, catalog.ts, queries.ts, tests, logo,
+icon.png/apple-icon.png, removed favicon.ico/icon.jpeg). Left untracked admin code in the working
+tree: `src/app/admin/`, `src/app/api/`, `src/components/admin/`, `src/lib/admin/`,
+`src/lib/supabase/admin.ts`, plus the `.env.example` admin-vars block.
+
+### 2. Decoupling check
+Grepped: no redesign file imports admin code (only `admin.ts` self-references). `queries.ts`
+`hidden=false` filter shipped with the redesign — safe because the `hidden` column already exists
+in the live DB and defaults `false`, so all kits display normally without the admin panel.
+
+### 3. Verification
+`npx vitest run` ✅ 18/18, `npx next build` ✅ clean. Pushed to `master`.
+
+### 4. Note
+First commit (`cdd8436`) got a stray `@` subject line from a PowerShell here-string mis-parse;
+amended the message via `-F` file and `--force-with-lease` (commit now `23582e8`). Content was
+unaffected.
+
+### 5. Open items
+- **Admin panel** still uncommitted; needs commit + the 3 env vars (see 06-13 evening §7) when
+  the owner is ready to ship it.
+- `.env.example` admin docs still unstaged.
+
+---
+
 ## 2026-06-13 (evening) — Full UI redesign (World Cup 2026 theme), rebrand assets, image fixes, and a no-code admin panel
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)
