@@ -36,3 +36,14 @@ export function listCountries(products: Product[]): string[] {
 export function latestArrivals(products: Product[], limit = 10): Product[] {
   return products.slice(0, limit);
 }
+
+// Mystery "tier" listings (surprise kits chosen at fulfillment) — shown in their own
+// section, never mixed into the country browse, arrivals rail, or search.
+export function mysteryKits(products: Product[]): Product[] {
+  return products.filter((p) => p.isMystery);
+}
+
+// Everything that is a normal, specific national-team kit.
+export function regularKits(products: Product[]): Product[] {
+  return products.filter((p) => !p.isMystery);
+}

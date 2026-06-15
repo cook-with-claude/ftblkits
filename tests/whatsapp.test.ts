@@ -2,17 +2,37 @@ import { describe, it, expect } from "vitest";
 import { buildOrderMessage, buildWhatsappLink } from "@/lib/whatsapp";
 
 describe("buildOrderMessage", () => {
-  it("substitutes all tokens", () => {
-    const tpl = "Hi GoalZone! I'd like to order: {name} - Size {size}. ${price}. {link}";
+  it("substitutes all tokens including quantity", () => {
+    const tpl = "Order: {quantity}x {name} — Size {size}.{notes}";
     const msg = buildOrderMessage(tpl, {
       name: "Argentina Home",
       size: "L",
-      price: 28,
-      link: "https://goalzone.example/jersey/abc",
+      quantity: 2,
+      notes: "",
     });
-    expect(msg).toBe(
-      "Hi GoalZone! I'd like to order: Argentina Home - Size L. $28. https://goalzone.example/jersey/abc",
-    );
+    expect(msg).toBe("Order: 2x Argentina Home — Size L.");
+  });
+
+  it("appends a pre-formatted notes line when present", () => {
+    const tpl = "Order: {quantity}x {name} (Size {size}).{notes}";
+    const msg = buildOrderMessage(tpl, {
+      name: "Mystery Kit",
+      size: "M",
+      quantity: 1,
+      notes: "\nSpecial request: prefer an away kit",
+    });
+    expect(msg).toBe("Order: 1x Mystery Kit (Size M).\nSpecial request: prefer an away kit");
+  });
+
+  it("carries no page link or price", () => {
+    const msg = buildOrderMessage("{name} {size} x{quantity}{notes}", {
+      name: "x",
+      size: "y",
+      quantity: 1,
+      notes: "",
+    });
+    expect(msg).not.toContain("http");
+    expect(msg).not.toContain("$");
   });
 });
 

@@ -4,6 +4,78 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-06-15 — Mystery Kits feature + quantity selector + WhatsApp message trim
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** Added a new **Mystery Kits** feature (surprise-kit tiers), a **quantity stepper** on
+every kit, and a **special-request box** for mystery kits — all flowing into the WhatsApp order
+message, which was also **stripped of the page link and price**. Builds clean and verified live in
+dev. **All work is uncommitted** on disk (consistent with the admin panel still being parked).
+
+### 1. Design decisions (brainstormed first)
+Talked through the concept before coding. Key insight: the store has **no on-site checkout** (every
+order is a WhatsApp handoff fulfilled by a human), so a mystery kit is a **presentation problem, not
+an inventory/randomization problem**. Owner's calls: **Tiers** (not a single listing or bundles),
+**size-only / pure surprise** (no on-site constraints), **team picks the kit manually** at
+fulfillment (no randomization engine, no reveal animation).
+
+### 2. Data (live Supabase, project `goalzone` / `myhcjdgsnaxwoqazswqe`)
+- Migration `add_is_mystery_to_products` — added `is_mystery boolean not null default false`.
+- Seeded **2 tier rows** (both `is_mystery=true`, `country='Mystery'`, S–XXL, in stock, no image):
+  **Mystery Kit** ($18, id `77d664f3-…`) and **Pro Mystery Kit** ($22, id `d98bdf35-…`). Prices are
+  defaults the owner can change (no admin panel yet → change via SQL or Supabase).
+
+### 3. Mystery Kits UI (matched to the WC2026 light theme; uses the existing `--gz-magenta` token
+as the "surprise" accent so it's on-brand but distinct)
+- **`MysteryVisual.tsx`** (new) — navy→magenta gradient with a floating `?`, twinkling sparkles,
+  accent glows, tri-color flag bar. Fills its parent like an `<Image fill>`, so it drops into the
+  same square slots as a photo. Two sizes (`card` / `detail`).
+- **`MysteryCard.tsx`** (new) — glassy translucent tier card for the dark panel (price, "kits worth
+  up to $25", "Surprise me" pill).
+- **`MysteryKits.tsx`** (new) — dark navy→magenta feature band on the home page ("Feeling lucky?"
+  eyebrow), placed between Hero and the catalog.
+- **CSS** (`globals.css`) — added `@keyframes gz-float` + `gz-twinkle` (both neutralized by the
+  existing reduced-motion block).
+- **Detail page** (`jersey/[id]/page.tsx`) — mystery kits share the route; render `MysteryVisual`
+  instead of a photo, a magenta "Mystery Kit" label, and a 3-step "how it works" explainer.
+- **Discoverability** — "Mystery Kits" nav link (desktop + mobile drawer) and a magenta teaser link
+  in the Hero.
+- **Clean separation** — added `mysteryKits()` / `regularKits()` in `catalog.ts`; `page.tsx` splits
+  the list so mystery tiers **never** appear in New Arrivals, the Shop-by-Country chips, or the main
+  grid (verified). +3 unit tests.
+
+### 4. Quantity selector (all kits) + special request (mystery only)
+- **`SizePicker.tsx`** — added a `− [n] +` stepper (navy on white, min 1 / max 99, decrement
+  disabled at 1, `aria-label`s + live region). For mystery kits only, an optional **special-request
+  textarea** (200-char cap + counter, magenta focus ring).
+- Both fold into the order message; the request becomes a `\nSpecial request: …` line, gated to
+  mystery + non-empty.
+
+### 5. WhatsApp message changes
+Removed the **page link**, then (owner follow-ups) the **total** and finally **all price** from the
+message. Final tokens: `{name} {size} {quantity} {notes}`. Examples:
+- Mystery: `Hi GoalZone! I'd like to order:\n3x Mystery Kit — Size M.\nSpecial request: prefer an away kit`
+- Regular: `Hi GoalZone! I'd like to order:\n1x Argentina Home — Size L.`
+Dropped the now-unused `pageUrl`/`siteUrl` threading from the detail page and `OrderButton`. Prices
+still show on cards and detail pages — just not in the WhatsApp text.
+
+### 6. Verification
+- `npx vitest run` ✅ **23/23** (was 18; +3 catalog split, +new whatsapp quantity/notes/no-link/no-price).
+- `npx eslint src --max-warnings 0` ✅ clean. `npx next build` ✅ clean.
+- **Live Playwright check** (desktop + 390px mobile): mystery band + cards render; mystery tiers
+  excluded from the country browse; quantity stepper + special-request box work; confirmed exact
+  `wa.me` payloads (qty + request, no link, no price); regular kit has no special-request box.
+
+### 7. Open items / next
+- **Uncommitted** on `master` — mystery feature (`Mystery*.tsx` + edits) and the quantity/message
+  changes. Needs commit + push to go live (Netlify auto-deploys on push; the DB column + seed rows
+  are already live).
+- Admin panel still parked (untouched). When shipped, mystery tiers are just products it can manage.
+- Tier names/prices ($18 / $22) are placeholders — adjust on request.
+
+---
+
 ## 2026-06-14 — Shipped the redesign (admin held back)
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)

@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "World Cup Kits", href: "/#catalog" },
   { label: "Shop by Country", href: "/#countries" },
+  { label: "Mystery Kits", href: "/#mystery" },
   { label: "New Arrivals", href: "/#arrivals" },
 ];
 

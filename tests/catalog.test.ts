@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { isSoldOut, filterProducts, sortProducts, listCountries, latestArrivals } from "@/lib/catalog";
+import {
+  isSoldOut,
+  filterProducts,
+  sortProducts,
+  listCountries,
+  latestArrivals,
+  mysteryKits,
+  regularKits,
+} from "@/lib/catalog";
 import { isUuid } from "@/lib/ids";
 import type { Product } from "@/lib/types";
 
@@ -13,6 +21,7 @@ function make(overrides: Partial<Product> = {}): Product {
     imageUrl: overrides.imageUrl ?? null,
     inStock: overrides.inStock ?? true,
     description: overrides.description ?? null,
+    isMystery: overrides.isMystery ?? false,
   };
 }
 
@@ -90,6 +99,23 @@ describe("sortProducts", () => {
     const arr = [make({ id: "a", inStock: false }), make({ id: "b", inStock: true })];
     sortProducts(arr);
     expect(arr.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("mysteryKits / regularKits", () => {
+  const list = [
+    make({ id: "arg", isMystery: false }),
+    make({ id: "myst", name: "Mystery Kit", country: "Mystery", isMystery: true }),
+    make({ id: "fra", isMystery: false }),
+  ];
+  it("mysteryKits returns only mystery tiers", () => {
+    expect(mysteryKits(list).map((p) => p.id)).toEqual(["myst"]);
+  });
+  it("regularKits returns only normal kits", () => {
+    expect(regularKits(list).map((p) => p.id)).toEqual(["arg", "fra"]);
+  });
+  it("the two are complementary partitions", () => {
+    expect(mysteryKits(list).length + regularKits(list).length).toBe(list.length);
   });
 });
 

@@ -7,14 +7,19 @@ import { WHATSAPP_NUMBER, ORDER_MESSAGE_TEMPLATE } from "@/lib/config";
 export function OrderButton({
   product,
   selectedSize,
-  pageUrl,
+  quantity,
+  notes,
 }: {
   product: Product;
   selectedSize: string | null;
-  pageUrl: string;
+  quantity: number;
+  notes: string;
 }) {
   const soldOut = !product.inStock;
   const disabled = soldOut || selectedSize === null;
+
+  const request = notes.trim();
+  const notesLine = product.isMystery && request ? `\nSpecial request: ${request}` : "";
 
   const href = disabled
     ? undefined
@@ -23,8 +28,8 @@ export function OrderButton({
         buildOrderMessage(ORDER_MESSAGE_TEMPLATE, {
           name: product.name,
           size: selectedSize,
-          price: product.price,
-          link: pageUrl,
+          quantity,
+          notes: notesLine,
         }),
       );
 

@@ -7,4 +7,5 @@ export interface Product {
   imageUrl: string | null;
   inStock: boolean;
   description: string | null;
+  isMystery: boolean;
 }

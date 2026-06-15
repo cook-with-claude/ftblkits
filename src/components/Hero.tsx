@@ -36,6 +36,16 @@ export function Hero() {
               Shop by country
             </Link>
           </div>
+
+          <Link
+            href="#mystery"
+            className="group mt-4 inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-gz-magenta transition-colors duration-200 hover:text-white"
+          >
+            Feeling lucky? Try a Mystery Kit
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
 
         {/* Tri-color motif */}
