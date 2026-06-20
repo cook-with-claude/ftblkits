@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     type: "website",
     images: ["/logo.jpeg"],
   },
+  verification: {
+    google: "4DjHPNCVOoZJW8GClLr40jXPUyCM-zje_Xu9y7t957A",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
