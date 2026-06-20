@@ -6,12 +6,12 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://the-goal-zone-kits
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: products } = await supabase
     .from("products")
-    .select("id, updated_at")
+    .select("id")
     .eq("in_stock", true);
 
   const jerseyUrls: MetadataRoute.Sitemap = (products ?? []).map((p) => ({
     url: `${BASE_URL}/jersey/${p.id}`,
-    lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
+    lastModified: new Date(),
     changeFrequency: "weekly",
     priority: 0.8,
   }));
