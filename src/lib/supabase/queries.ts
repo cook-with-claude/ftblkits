@@ -31,24 +31,39 @@ function toProduct(row: ProductRow): Product {
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(COLUMNS)
-    .eq("hidden", false)
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(`Failed to load products: ${error.message}`);
-  return (data ?? []).map((row) => toProduct(row as ProductRow));
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select(COLUMNS)
+      .eq("hidden", false)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => toProduct(row as ProductRow));
+  } catch (err) {
+    // Never let a Supabase outage (e.g. a free-tier project auto-paused after
+    // inactivity, or a network blip) crash the whole page. Log it and render
+    // an empty catalog so the rest of the site stays up.
+    console.error("[queries] getAllProducts failed:", err);
+    return [];
+  }
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
   if (!isUuid(id)) return null;
 
-  const { data, error } = await supabase
-    .from("products")
-    .select(COLUMNS)
-    .eq("id", id)
-    .eq("hidden", false)
-    .maybeSingle();
-  if (error) throw new Error(`Failed to load product: ${error.message}`);
-  return data ? toProduct(data as ProductRow) : null;
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select(COLUMNS)
+      .eq("id", id)
+      .eq("hidden", false)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? toProduct(data as ProductRow) : null;
+  } catch (err) {
+    // Same reasoning as getAllProducts: degrade to "not found" (a 404) rather
+    // than a 500 if Supabase is unreachable.
+    console.error(`[queries] getProductById(${id}) failed:`, err);
+    return null;
+  }
 }
