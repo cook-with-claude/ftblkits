@@ -38,7 +38,7 @@ export function MysteryCard({ product }: { product: Product }) {
           <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-lg uppercase leading-tight text-white">
             {product.name}
           </h3>
-          <p className="mt-1 text-xs text-white/60">Kits worth up to $25</p>
+          <p className="mt-1 text-xs text-white/60">Kits worth up to $30</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="font-[family-name:var(--font-display)] text-2xl leading-none text-white">
