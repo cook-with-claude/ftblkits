@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { Anton, Inter } from "next/font/google";
+import { Anton, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-display", display: "swap" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const hanken = Hanken_Grotesk({
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -25,7 +30,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${anton.variable} ${inter.variable} bg-gz-bg font-[family-name:var(--font-body)] text-gz-body antialiased`}>
+      <body className={`${anton.variable} ${hanken.variable} bg-gz-bg font-[family-name:var(--font-body)] text-gz-body antialiased`}>
         {children}
       </body>
     </html>

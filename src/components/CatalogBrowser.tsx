@@ -42,7 +42,7 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
           <div className="gz-no-scrollbar mt-4 flex snap-x gap-3 overflow-x-auto pb-2">
             {arrivals.map((product) => (
               <div key={product.id} className="w-40 shrink-0 snap-start sm:w-48">
-                <JerseyCard product={product} />
+                <JerseyCard product={product} badge="new" />
               </div>
             ))}
           </div>
@@ -96,15 +96,26 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
         <div className="mt-1 h-1 w-16 rounded-full gz-flag-gradient" aria-hidden="true" />
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex-1">
+          <div className="relative flex-1">
             <label htmlFor="search" className="sr-only">Search jerseys</label>
+            <svg
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gz-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4-4" strokeLinecap="round" />
+            </svg>
             <input
               id="search"
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search team or country…"
-              className="w-full rounded-xl border border-gz-border bg-gz-surface px-4 py-3 text-base text-gz-text placeholder:text-gz-muted focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/40"
+              className="w-full rounded-xl border border-gz-border bg-gz-surface py-3 pl-11 pr-4 text-base text-gz-text placeholder:text-gz-muted focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/40"
             />
           </div>
           <button

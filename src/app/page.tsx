@@ -13,10 +13,12 @@ export default async function HomePage() {
   const products = await getAllProducts();
   const mystery = mysteryKits(products);
   const regular = regularKits(products);
+  // Feature the newest in-stock kit in the hero (fall back to the newest kit).
+  const featured = regular.find((p) => p.inStock) ?? regular[0] ?? null;
   return (
     <main>
       <Header />
-      <Hero />
+      <Hero featured={featured} />
       <MysteryKits kits={mystery} />
       <CatalogBrowser products={regular} />
       <Footer />

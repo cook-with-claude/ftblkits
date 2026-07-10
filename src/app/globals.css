@@ -80,6 +80,42 @@ html, body {
   animation: gz-float 4.5s ease-in-out infinite;
 }
 
+/* Larger float for the hero's featured kit card */
+@keyframes gz-float-lg {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.gz-float-lg {
+  animation: gz-float-lg 6.5s ease-in-out infinite;
+}
+
+/* Fade-and-rise entrance for hero copy and CTAs */
+@keyframes gz-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+.gz-rise {
+  animation: gz-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Diagonal light sweep across a card image on hover */
+@keyframes gz-sheen {
+  from { transform: translateX(-150%) skewX(-18deg); }
+  to { transform: translateX(320%) skewX(-18deg); }
+}
+
+/* Shimmer for loading skeletons */
+@keyframes gz-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Card hover interactions — descendant effects that can't live inline.
+   Any element with .gz-card drives these on its children. */
+.gz-card:hover .gz-card-img { transform: scale(1.075); }
+.gz-card:hover .gz-sheen { animation: gz-sheen 0.95s ease; }
+.gz-card:hover .gz-quick { opacity: 1; transform: translateY(0); }
+
 /* Slow twinkle for the scattered mystery sparkles */
 @keyframes gz-twinkle {
   0%, 100% { opacity: 0.25; transform: scale(0.9); }

@@ -1,24 +1,56 @@
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { isSoldOut } from "@/lib/catalog";
-import { MysteryVisual } from "./MysteryVisual";
 
-// A mystery "tier" card. Lives inside the dark Mystery Kits panel, so it uses a glassy
-// translucent body with white text and a magenta accent — distinct from the white
-// JerseyCard used in the country grid.
-export function MysteryCard({ product }: { product: Product }) {
+// Scattered twinkling sparkles over the mystery card header.
+const SPARKLES = [
+  { top: "26%", left: "18%", size: "12px", color: "#EC1E5C", delay: "0s" },
+  { top: "20%", right: "22%", size: "9px", color: "#fff", delay: "0.5s" },
+  { bottom: "24%", right: "26%", size: "13px", color: "#EC1E5C", delay: "0.9s" },
+];
+
+// A mystery "tier" card. Lives inside the dark Mystery Kits panel: a glassy translucent
+// body with a gradient header holding a floating "?" and sparkles, distinct from the
+// white JerseyCard used in the country grid.
+export function MysteryCard({ product, popular }: { product: Product; popular?: boolean }) {
   const soldOut = isSoldOut(product);
+  const tagline = product.description?.trim() || "A genuine in-stock kit, hand-picked for you.";
 
   return (
     <Link
       href={`/jersey/${product.id}`}
-      className="group relative block cursor-pointer overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] transition-all duration-200 hover:-translate-y-0.5 hover:border-gz-magenta hover:bg-white/10 hover:shadow-lg hover:shadow-gz-magenta/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta"
+      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta"
     >
-      <div className="relative aspect-[5/4] overflow-hidden">
-        <MysteryVisual />
+      {popular && (
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-gz-magenta px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-gz-navy-deep">
+          Most popular
+        </span>
+      )}
 
-        <span className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white backdrop-blur">
-          Surprise me
+      <div
+        className="relative h-40 overflow-hidden"
+        style={{ background: "radial-gradient(130% 130% at 30% 12%, #3a1450, #15206b 72%)" }}
+      >
+        {SPARKLES.map((s, i) => (
+          <span
+            key={i}
+            className="gz-twinkle absolute font-[family-name:var(--font-display)]"
+            style={{
+              top: s.top,
+              left: s.left,
+              right: s.right,
+              bottom: s.bottom,
+              fontSize: s.size,
+              color: s.color,
+              animationDelay: s.delay,
+            }}
+            aria-hidden="true"
+          >
+            ✦
+          </span>
+        ))}
+        <span className="gz-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-[family-name:var(--font-display)] text-[86px] leading-none text-white/90">
+          ?
         </span>
 
         {soldOut && (
@@ -32,23 +64,20 @@ export function MysteryCard({ product }: { product: Product }) {
 
       <div className="flex items-end justify-between gap-3 p-4">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-wide text-gz-magenta">
+          <p className="text-[10px] font-extrabold uppercase tracking-wide text-gz-magenta">
             Mystery Kit
           </p>
-          <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-lg uppercase leading-tight text-white">
+          <h3 className="mt-1.5 font-[family-name:var(--font-display)] text-lg uppercase leading-none text-white">
             {product.name}
           </h3>
-          <p className="mt-1 text-xs text-white/60">Kits worth up to $30</p>
+          <p className="mt-1.5 text-xs leading-snug text-white/60">{tagline}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-[family-name:var(--font-display)] text-2xl leading-none text-white">
+          <p className="font-[family-name:var(--font-display)] text-[27px] leading-none text-white">
             ${product.price}
           </p>
-          <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-gz-magenta transition-transform duration-200 group-hover:translate-x-0.5">
-            Open
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3.5 w-3.5" aria-hidden="true">
-              <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-gz-magenta transition-transform duration-200 group-hover:translate-x-0.5">
+            Open →
           </span>
         </div>
       </div>
