@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifySessionToken } from "./auth";
+import { SITE_URL } from "@/lib/config";
 import type { AdminProduct } from "./types";
 import { PRODUCT_LIMITS } from "./validation";
 export { PRODUCT_LIMITS } from "./validation";
@@ -13,12 +14,42 @@ export function requireAdmin(req: NextRequest): NextResponse | null {
   return null;
 }
 
-export function requireSameOrigin(req: NextRequest): NextResponse | null {
-  const origin = req.headers.get("origin");
-  if (!origin || origin !== req.nextUrl.origin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+// The set of origins an admin mutation may legitimately come from. Behind a
+// proxy (Netlify) `req.nextUrl.origin` is an internal address that never
+// matches the browser's Origin, so we trust the host the browser actually
+// addressed (forwarded by the proxy) plus the configured canonical site URL.
+function trustedOrigins(req: NextRequest): Set<string> {
+  const allowed = new Set<string>();
+  const host =
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  if (host) {
+    const proto =
+      req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      req.nextUrl.protocol.replace(":", "") ||
+      "https";
+    allowed.add(`${proto}://${host}`);
   }
-  return null;
+  try {
+    allowed.add(new URL(SITE_URL).origin);
+  } catch {
+    // SITE_URL normalizes to a safe default, so this should not throw.
+  }
+  return allowed;
+}
+
+export function requireSameOrigin(req: NextRequest): NextResponse | null {
+  const originHeader = req.headers.get("origin");
+  const forbidden = () => NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!originHeader) return forbidden();
+
+  let origin: string;
+  try {
+    origin = new URL(originHeader).origin;
+  } catch {
+    return forbidden();
+  }
+
+  return trustedOrigins(req).has(origin) ? null : forbidden();
 }
 
 export const ADMIN_COLUMNS =
