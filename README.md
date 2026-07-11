@@ -1,10 +1,10 @@
 # GoalZone — Football Kits Catalog
 
 Mobile-first jersey catalog. Customers browse, pick a size, and order on WhatsApp.
-The team manages listings and stock in the **Supabase dashboard** (Table Editor) — no code required.
+The team manages listings, photos, and stock through the password-protected **`/admin` panel**.
 
 ## Stack
-Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · Supabase (Postgres) · Vercel
+Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · Supabase (Postgres) · Netlify
 
 ## Data model
 A single `products` table:
@@ -26,9 +26,9 @@ A single `products` table:
 Kit photos live in a public Supabase Storage bucket named **`kits`** (public-read only).
 Image URLs follow `…/storage/v1/object/public/kits/<file>.jpg`.
 
-Row Level Security is on with a **public read-only** policy. There are no public write
-policies, so the catalog can be read with the publishable key but only edited from the
-Supabase dashboard.
+Row Level Security is on with a **visible-products-only public read** policy. Hidden rows
+and every write operation remain unavailable to the public key; admin writes use a
+server-only service-role key after manager authentication.
 
 ## Local development
 1. `npm install`
@@ -39,28 +39,31 @@ Supabase dashboard.
    - `NEXT_PUBLIC_WHATSAPP_NUMBER` — the order line in international digits, e.g. `9613XXXXXX`
    - `NEXT_PUBLIC_SITE_URL` — `http://localhost:3000` locally
    - `SUPABASE_SERVICE_ROLE_KEY` — server-only service role key for `/api/admin/*`
-   - `ADMIN_PASSWORD` — shared manager password for `/admin`
-   - `ADMIN_SESSION_SECRET` — random cookie signing secret
+   - `ADMIN_PASSWORD` — strong, unique shared manager password for `/admin`
+   - `ADMIN_SESSION_SECRET` — at least 32 random bytes for cookie signing
 4. `npm run dev` → site at http://localhost:3000
 
 ## Tests
-`npm test` — Vitest unit tests covering catalog logic (sold-out, search filter, sort) and WhatsApp link building.
+`npm test` — Vitest tests covering catalog behavior, admin validation/authentication,
+image signatures, outage handling, configuration, and WhatsApp link building.
 
-## Deploy (Vercel)
-1. Push to GitHub, import the repo in Vercel.
+## Deploy (Netlify)
+1. Push to GitHub and connect the repository to Netlify.
 2. Add the env vars from `.env.example` (set `NEXT_PUBLIC_SITE_URL` to the production URL).
 3. Deploy. Pages render dynamically, so dashboard edits show up on the next page load.
 
 ## Managing the catalog (for the team — no code)
-Managers can use `/admin` after entering the shared password, or edit directly in
-Supabase if needed: open your project → **Table Editor** → `products`.
+Managers use `/admin` after entering the shared password. Supabase Table Editor remains
+an emergency-only option for the project owner.
 - **Add a jersey:** Insert row → fill name, country, price, sizes (e.g. `{S,M,L,XL}`),
   image_url, in_stock = true → Save.
 - **Mark sold out:** open the row → set `in_stock` to `false` → Save. The whole card
   shows a "Sold Out" overlay.
 - **Add a description:** fill the `description` column — it appears under the price on the
   jersey detail page.
-- **Images:** upload to the public **`kits`** Storage bucket, copy the public URL into
-  `image_url`. Any public HTTPS image URL works.
-- **Change the WhatsApp number:** update `NEXT_PUBLIC_WHATSAPP_NUMBER` in Vercel env vars
+- **Images:** upload through `/admin`. Public product images are restricted to the
+  configured Supabase **`kits`** Storage bucket.
+- **Change the WhatsApp number:** update `NEXT_PUBLIC_WHATSAPP_NUMBER` in Netlify env vars
   and redeploy (it rarely changes).
+
+See [`docs/launch-readiness.md`](docs/launch-readiness.md) before every production launch.

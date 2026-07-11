@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { SITE_URL } from "@/lib/config";
 
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-display", display: "swap" });
 const hanken = Hanken_Grotesk({
@@ -10,10 +11,9 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
   title: { default: "The Goal Zone — Football Kits", template: "%s | The Goal Zone" },
   description: "Replica national-team jerseys in Beirut. Browse, pick your size, order on WhatsApp.",
   openGraph: {
@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   verification: {
     google: "4DjHPNCVOoZJW8GClLr40jXPUyCM-zje_Xu9y7t957A",
   },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -55,3 +55,12 @@ export async function uploadImage(file: File): Promise<string> {
   if (!res.ok) throw new Error(await readError(res));
   return (await res.json()).url;
 }
+
+export async function discardUploadedImage(url: string): Promise<void> {
+  const res = await fetch("/api/admin/upload", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+}

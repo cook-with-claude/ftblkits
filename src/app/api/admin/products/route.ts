@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { ADMIN_COLUMNS, parseProductBody, requireAdmin, toAdminProduct } from "@/lib/admin/server";
+import {
+  ADMIN_COLUMNS,
+  parseProductBody,
+  requireAdmin,
+  requireSameOrigin,
+  toAdminProduct,
+} from "@/lib/admin/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +22,10 @@ export async function GET(req: NextRequest) {
     .select(ADMIN_COLUMNS)
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[admin/products] list failed", error);
+    return NextResponse.json({ error: "Could not load kits" }, { status: 500 });
+  }
   return NextResponse.json({ products: (data ?? []).map(toAdminProduct) });
 }
 
@@ -24,6 +33,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const denied = requireAdmin(req);
   if (denied) return denied;
+  const untrusted = requireSameOrigin(req);
+  if (untrusted) return untrusted;
 
   let body: unknown;
   try {
@@ -42,6 +53,9 @@ export async function POST(req: NextRequest) {
     .select(ADMIN_COLUMNS)
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[admin/products] create failed", error);
+    return NextResponse.json({ error: "Could not add kit" }, { status: 500 });
+  }
   return NextResponse.json({ product: toAdminProduct(data) }, { status: 201 });
 }

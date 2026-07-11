@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { SizePicker } from "@/components/SizePicker";
 import { MysteryVisual } from "@/components/MysteryVisual";
 import { getProductById } from "@/lib/supabase/queries";
+import { mysteryKitDescription } from "@/lib/mystery";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,14 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const product = await getProductById(id);
-  if (!product) return { title: "Jersey not found" };
+  const result = await getProductById(id);
+  if (result.status === "not_found") return { title: "Jersey not found" };
+  if (result.status === "unavailable") return { title: "Catalog temporarily unavailable" };
+  const product = result.product;
   const title = `${product.name} — $${product.price}`;
   return {
     title,
+    alternates: { canonical: `/jersey/${product.id}` },
     openGraph: { title, images: product.imageUrl ? [product.imageUrl] : ["/logo.jpeg"] },
   };
 }
@@ -30,8 +34,12 @@ export default async function JerseyPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await getProductById(id);
-  if (!product) notFound();
+  const result = await getProductById(id);
+  if (result.status === "not_found") notFound();
+  if (result.status === "unavailable") {
+    throw new Error("The live catalog is temporarily unavailable");
+  }
+  const product = result.product;
 
   return (
     <main className="pb-28">
@@ -90,12 +98,14 @@ export default async function JerseyPage({
             <p className="mt-3 text-2xl font-bold text-gz-text">
               ${product.price}
               {product.isMystery && (
-                <span className="ml-2 text-sm font-bold text-gz-muted">· kits worth up to $25</span>
+                <span className="ml-2 text-sm font-bold text-gz-muted">· priced below regular kits</span>
               )}
             </p>
 
-            {product.description && (
-              <p className="mt-4 text-sm leading-relaxed text-gz-body">{product.description}</p>
+            {(product.isMystery || product.description) && (
+              <p className="mt-4 text-sm leading-relaxed text-gz-body">
+                {product.isMystery ? mysteryKitDescription(product.name) : product.description}
+              </p>
             )}
 
             {product.isMystery && (

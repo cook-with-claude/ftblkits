@@ -10,7 +10,26 @@ import { mysteryKits, regularKits } from "@/lib/catalog";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const products = await getAllProducts();
+  const catalog = await getAllProducts();
+  if (catalog.status === "unavailable") {
+    return (
+      <main>
+        <Header />
+        <section className="mx-auto flex min-h-[55vh] max-w-2xl flex-col items-center justify-center px-4 py-20 text-center">
+          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-gz-red">Temporarily unavailable</p>
+          <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl uppercase text-gz-navy">
+            The kit catalog is taking a quick break
+          </h1>
+          <p className="mt-4 max-w-lg text-gz-body">
+            We could not load live stock right now. Please try again shortly or contact us on WhatsApp.
+          </p>
+        </section>
+        <Footer />
+      </main>
+    );
+  }
+
+  const products = catalog.products;
   const mystery = mysteryKits(products);
   const regular = regularKits(products);
   // Feature the newest in-stock kit in the hero (fall back to the newest kit).

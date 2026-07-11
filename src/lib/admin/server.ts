@@ -1,12 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifySessionToken } from "./auth";
 import type { AdminProduct } from "./types";
+import { PRODUCT_LIMITS } from "./validation";
+export { PRODUCT_LIMITS } from "./validation";
 
 // Returns a 401 response if the request lacks a valid admin session, else null.
 export function requireAdmin(req: NextRequest): NextResponse | null {
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
   if (!verifySessionToken(token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
+}
+
+export function requireSameOrigin(req: NextRequest): NextResponse | null {
+  const origin = req.headers.get("origin");
+  if (!origin || origin !== req.nextUrl.origin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return null;
 }
@@ -48,9 +58,41 @@ function coerceSizes(v: unknown): string[] {
     : typeof v === "string"
       ? v.split(",")
       : [];
+  const seen = new Set<string>();
   return parts
     .map((s) => String(s).trim())
-    .filter((s) => s.length > 0);
+    .filter((s) => {
+      if (!s || s.length > PRODUCT_LIMITS.size) return false;
+      const key = s.toLocaleLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+export function isAllowedProductImageUrl(value: string): boolean {
+  try {
+    const image = new URL(value);
+    const project = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    return (
+      image.protocol === "https:" &&
+      image.origin === project.origin &&
+      image.pathname.startsWith("/storage/v1/object/public/kits/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function validatePublishableProduct(row: Record<string, unknown>): string | null {
+  if (row.hidden !== false) return null;
+  if (!Array.isArray(row.sizes) || row.sizes.length === 0) {
+    return "Add at least one size before showing this kit in the shop";
+  }
+  if (typeof row.image_url !== "string" || !isAllowedProductImageUrl(row.image_url)) {
+    return "Upload a valid kit photo before showing this kit in the shop";
+  }
+  return null;
 }
 
 function parseBoolean(value: unknown): boolean | null {
@@ -80,11 +122,17 @@ export function parseProductBody(
   if (has("name")) {
     const name = String(b.name ?? "").trim();
     if (!name) return { ok: false, error: "Name is required" };
+    if (name.length > PRODUCT_LIMITS.name) {
+      return { ok: false, error: `Name must be ${PRODUCT_LIMITS.name} characters or fewer` };
+    }
     row.name = name;
   }
   if (has("country")) {
     const country = String(b.country ?? "").trim();
     if (!country) return { ok: false, error: "Country is required" };
+    if (country.length > PRODUCT_LIMITS.country) {
+      return { ok: false, error: `Country must be ${PRODUCT_LIMITS.country} characters or fewer` };
+    }
     row.country = country;
   }
   if (has("price")) {
@@ -92,19 +140,47 @@ export function parseProductBody(
       return { ok: false, error: "Price must be a number ≥ 0" };
     }
     const price = Number(b.price);
-    if (!Number.isFinite(price) || price < 0) {
-      return { ok: false, error: "Price must be a number ≥ 0" };
+    if (!Number.isFinite(price) || price < 0 || price > PRODUCT_LIMITS.price) {
+      return { ok: false, error: `Price must be between 0 and ${PRODUCT_LIMITS.price}` };
+    }
+    if (Math.abs(price * 100 - Math.round(price * 100)) > Number.EPSILON * 100) {
+      return { ok: false, error: "Price can have at most 2 decimal places" };
     }
     row.price = price;
   }
-  if (has("sizes")) row.sizes = coerceSizes(b.sizes);
+  if (has("sizes")) {
+    const rawParts = Array.isArray(b.sizes)
+      ? b.sizes
+      : typeof b.sizes === "string"
+        ? b.sizes.split(",")
+        : [];
+    if (rawParts.some((s) => String(s).trim().length > PRODUCT_LIMITS.size)) {
+      return { ok: false, error: `Each size must be ${PRODUCT_LIMITS.size} characters or fewer` };
+    }
+    const sizes = coerceSizes(b.sizes);
+    if (sizes.length > PRODUCT_LIMITS.sizes) {
+      return { ok: false, error: `Use no more than ${PRODUCT_LIMITS.sizes} sizes` };
+    }
+    row.sizes = sizes;
+  }
   if (has("description")) {
     const d = b.description;
-    row.description = d == null || String(d).trim() === "" ? null : String(d).trim();
+    const description = d == null ? "" : String(d).trim();
+    if (description.length > PRODUCT_LIMITS.description) {
+      return {
+        ok: false,
+        error: `Description must be ${PRODUCT_LIMITS.description} characters or fewer`,
+      };
+    }
+    row.description = description || null;
   }
   if (has("imageUrl")) {
     const u = b.imageUrl;
-    row.image_url = u == null || String(u).trim() === "" ? null : String(u).trim();
+    const imageUrl = u == null ? "" : String(u).trim();
+    if (imageUrl && !isAllowedProductImageUrl(imageUrl)) {
+      return { ok: false, error: "Photo must come from the configured kits storage bucket" };
+    }
+    row.image_url = imageUrl || null;
   }
   if (has("inStock")) {
     const parsed = parseBoolean(b.inStock);
@@ -127,11 +203,16 @@ export function parseProductBody(
     if (row.country === undefined) return { ok: false, error: "Country is required" };
     if (row.price === undefined) return { ok: false, error: "Price is required" };
     if (row.sizes === undefined) row.sizes = [];
+    if (row.image_url === undefined) row.image_url = null;
     if (row.in_stock === undefined) row.in_stock = true;
     if (row.hidden === undefined) row.hidden = false;
     if (row.is_mystery === undefined) row.is_mystery = false;
   }
 
   if (Object.keys(row).length === 0) return { ok: false, error: "Nothing to update" };
+  if (!partial) {
+    const publishError = validatePublishableProduct(row);
+    if (publishError) return { ok: false, error: publishError };
+  }
   return { ok: true, row };
 }

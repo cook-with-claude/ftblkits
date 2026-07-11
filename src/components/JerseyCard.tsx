@@ -48,8 +48,7 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
     () => false,
   );
 
-  const toggleWish = (e: React.MouseEvent) => {
-    e.preventDefault(); // don't follow the card's link
+  const toggleWish = () => {
     const list = readWishlist();
     if (list[product.id]) delete list[product.id];
     else list[product.id] = true;
@@ -58,10 +57,11 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
   };
 
   return (
-    <Link
-      href={`/jersey/${product.id}`}
-      className="gz-card group relative block cursor-pointer overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
-    >
+    <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15">
+      <Link
+        href={`/jersey/${product.id}`}
+        className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gz-navy"
+      >
       <div className="relative aspect-square overflow-hidden bg-gz-navy-deep">
         {product.imageUrl && (
           <Image
@@ -91,29 +91,6 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
             </span>
           )
         )}
-
-        {/* Wishlist heart */}
-        <button
-          type="button"
-          onClick={toggleWish}
-          aria-label={wished ? "Remove from saved" : "Save kit"}
-          aria-pressed={wished}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-transform duration-200 hover:scale-110"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill={wished ? "#e10600" : "none"}
-            stroke={wished ? "#e10600" : "#5A6172"}
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 21s-7.5-4.9-10-9.5C.5 8 2 4.5 5.3 4.5c2 0 3.3 1.2 3.9 2.2h1.6c.6-1 1.9-2.2 3.9-2.2C21 4.5 22.5 8 21 11.5 18.5 16.1 12 21 12 21z"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
 
         {/* Quick-view overlay */}
         <div className="gz-quick pointer-events-none absolute inset-x-2.5 bottom-2.5 translate-y-2.5 opacity-0 transition-all duration-300">
@@ -145,6 +122,29 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
           )}
         </div>
       </div>
-    </Link>
+      </Link>
+
+      <button
+        type="button"
+        onClick={toggleWish}
+        aria-label={wished ? `Remove ${product.name} from saved kits` : `Save ${product.name}`}
+        aria-pressed={wished}
+        className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-red"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill={wished ? "#e10600" : "none"}
+          stroke={wished ? "#e10600" : "#5A6172"}
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 21s-7.5-4.9-10-9.5C.5 8 2 4.5 5.3 4.5c2 0 3.3 1.2 3.9 2.2h1.6c.6-1 1.9-2.2 3.9-2.2C21 4.5 22.5 8 21 11.5 18.5 16.1 12 21 12 21z"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
   );
 }

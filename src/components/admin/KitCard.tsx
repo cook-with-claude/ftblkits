@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { AdminProduct } from "@/lib/admin/types";
-import { deleteProduct, updateProduct, uploadImage } from "./api";
+import { deleteProduct, discardUploadedImage, updateProduct, uploadImage } from "./api";
+import { PRODUCT_LIMITS } from "@/lib/admin/validation";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -37,8 +38,10 @@ export function KitCard({
     setBusy("upload");
     setMsg(null);
     try {
+      const previous = imageUrl;
       const url = await uploadImage(file);
       setImageUrl(url);
+      if (previous && previous !== product.imageUrl) await discardUploadedImage(previous);
       setMsg({ kind: "ok", text: "Photo uploaded — click Save to keep it." });
     } catch (err) {
       setMsg({ kind: "err", text: err instanceof Error ? err.message : "Upload failed" });
@@ -99,11 +102,11 @@ export function KitCard({
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className={labelClass}>Name</label>
-              <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} />
+              <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={PRODUCT_LIMITS.name} />
             </div>
             <div>
               <label className={labelClass}>Country</label>
-              <input className={fieldClass} value={country} onChange={(e) => setCountry(e.target.value)} />
+              <input className={fieldClass} value={country} onChange={(e) => setCountry(e.target.value)} maxLength={PRODUCT_LIMITS.country} />
             </div>
             <div>
               <label className={labelClass}>Price ($)</label>
@@ -111,7 +114,8 @@ export function KitCard({
                 className={fieldClass}
                 type="number"
                 min="0"
-                step="1"
+                step="0.01"
+                max={PRODUCT_LIMITS.price}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
@@ -129,7 +133,7 @@ export function KitCard({
           <label className={labelClass}>Replace photo</label>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             onChange={onPickImage}
             disabled={busy === "upload"}
             className="mt-1 block w-full cursor-pointer text-sm text-gz-body file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gz-navy file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:text-white"
@@ -143,6 +147,7 @@ export function KitCard({
           className={`${fieldClass} min-h-16`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          maxLength={PRODUCT_LIMITS.description}
         />
       </div>
 
