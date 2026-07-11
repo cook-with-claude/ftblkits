@@ -1,10 +1,13 @@
 name: CI
 
-# Lint, test, and build on every push and pull request so broken code is caught
-# before it reaches a deploy. Separate from the Supabase keep-alive workflow.
+# Lint, test, and build so broken code is caught before it reaches a deploy.
+# Runs on pushes to master and on every pull request (branch pushes are covered
+# by their PR, so we don't double-run them). Separate from the Supabase
+# keep-alive workflow.
 
 on:
   push:
+    branches: [master]
   pull_request:
 
 jobs:
@@ -21,9 +24,9 @@ jobs:
       ADMIN_PASSWORD: ci-password
       ADMIN_SESSION_SECRET: ci-session-secret
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
