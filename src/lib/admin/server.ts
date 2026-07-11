@@ -53,6 +53,16 @@ function coerceSizes(v: unknown): string[] {
     .filter((s) => s.length > 0);
 }
 
+function parseBoolean(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return null;
+}
+
 // Maps a JSON body to a DB-column object. `partial` (PATCH) only includes
 // provided keys; create (POST) requires name/country/price.
 export function parseProductBody(
@@ -78,6 +88,9 @@ export function parseProductBody(
     row.country = country;
   }
   if (has("price")) {
+    if (typeof b.price === "string" && b.price.trim() === "") {
+      return { ok: false, error: "Price must be a number ≥ 0" };
+    }
     const price = Number(b.price);
     if (!Number.isFinite(price) || price < 0) {
       return { ok: false, error: "Price must be a number ≥ 0" };
@@ -93,9 +106,21 @@ export function parseProductBody(
     const u = b.imageUrl;
     row.image_url = u == null || String(u).trim() === "" ? null : String(u).trim();
   }
-  if (has("inStock")) row.in_stock = Boolean(b.inStock);
-  if (has("hidden")) row.hidden = Boolean(b.hidden);
-  if (has("isMystery")) row.is_mystery = Boolean(b.isMystery);
+  if (has("inStock")) {
+    const parsed = parseBoolean(b.inStock);
+    if (parsed === null) return { ok: false, error: "In-stock must be true or false" };
+    row.in_stock = parsed;
+  }
+  if (has("hidden")) {
+    const parsed = parseBoolean(b.hidden);
+    if (parsed === null) return { ok: false, error: "Hidden must be true or false" };
+    row.hidden = parsed;
+  }
+  if (has("isMystery")) {
+    const parsed = parseBoolean(b.isMystery);
+    if (parsed === null) return { ok: false, error: "Mystery kit must be true or false" };
+    row.is_mystery = parsed;
+  }
 
   if (!partial) {
     if (row.name === undefined) return { ok: false, error: "Name is required" };

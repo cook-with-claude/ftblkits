@@ -18,6 +18,8 @@ A single `products` table:
 | `sizes` | text[] | available sizes, e.g. `{S,M,L,XL}` |
 | `image_url` | text | public image URL (Supabase Storage or any host) |
 | `in_stock` | boolean | whole-product stock; `false` shows a "Sold Out" overlay |
+| `hidden` | boolean | hides a kit from the public catalog/detail/sitemap while keeping it in admin |
+| `is_mystery` | boolean | marks a product as a mystery-kit tier instead of a regular catalog kit |
 | `description` | text | short kit description shown on the detail page, e.g. "Spain home kit — adidas…" |
 | `created_at` | timestamptz | newest first |
 
@@ -30,12 +32,16 @@ Supabase dashboard.
 
 ## Local development
 1. `npm install`
-2. Copy `.env.example` to `.env.local` and fill in:
+2. Run the Supabase SQL in `supabase/migrations/` against your project.
+3. Copy `.env.example` to `.env.local` and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL` — your project URL (Supabase → Project Settings → API)
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — the publishable key (`sb_publishable_…`)
    - `NEXT_PUBLIC_WHATSAPP_NUMBER` — the order line in international digits, e.g. `9613XXXXXX`
    - `NEXT_PUBLIC_SITE_URL` — `http://localhost:3000` locally
-3. `npm run dev` → site at http://localhost:3000
+   - `SUPABASE_SERVICE_ROLE_KEY` — server-only service role key for `/api/admin/*`
+   - `ADMIN_PASSWORD` — shared manager password for `/admin`
+   - `ADMIN_SESSION_SECRET` — random cookie signing secret
+4. `npm run dev` → site at http://localhost:3000
 
 ## Tests
 `npm test` — Vitest unit tests covering catalog logic (sold-out, search filter, sort) and WhatsApp link building.
@@ -46,7 +52,8 @@ Supabase dashboard.
 3. Deploy. Pages render dynamically, so dashboard edits show up on the next page load.
 
 ## Managing the catalog (for the team — no code)
-Open your project in the Supabase dashboard → **Table Editor** → `products`.
+Managers can use `/admin` after entering the shared password, or edit directly in
+Supabase if needed: open your project → **Table Editor** → `products`.
 - **Add a jersey:** Insert row → fill name, country, price, sizes (e.g. `{S,M,L,XL}`),
   image_url, in_stock = true → Save.
 - **Mark sold out:** open the row → set `in_stock` to `false` → Save. The whole card

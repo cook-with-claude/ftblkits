@@ -49,6 +49,11 @@ describe("parseProductBody — create (partial: false)", () => {
     expect(res.ok).toBe(false);
   });
 
+  it("rejects a blank price string", () => {
+    const res = parseProductBody({ ...valid, price: "   " }, { partial: false });
+    expect(res.ok).toBe(false);
+  });
+
   it("trims whitespace-only name to an error", () => {
     const res = parseProductBody({ ...valid, name: "   " }, { partial: false });
     expect(res).toEqual({ ok: false, error: "Name is required" });
@@ -70,11 +75,24 @@ describe("parseProductBody — sizes coercion", () => {
 describe("parseProductBody — flags & nullable fields", () => {
   const base = { name: "A", country: "B", price: 1 };
 
-  it("coerces boolean flags", () => {
-    const r = row({ ...base, inStock: 1, hidden: 0, isMystery: "yes" }, false);
+  it("accepts boolean flags", () => {
+    const r = row({ ...base, inStock: true, hidden: false, isMystery: true }, false);
     expect(r.in_stock).toBe(true);
     expect(r.hidden).toBe(false);
     expect(r.is_mystery).toBe(true);
+  });
+
+  it("accepts explicit true/false strings", () => {
+    const r = row({ ...base, inStock: "false", hidden: "true", isMystery: "false" }, false);
+    expect(r.in_stock).toBe(false);
+    expect(r.hidden).toBe(true);
+    expect(r.is_mystery).toBe(false);
+  });
+
+  it("rejects ambiguous boolean values", () => {
+    expect(parseProductBody({ ...base, inStock: 1 }, { partial: false }).ok).toBe(false);
+    expect(parseProductBody({ ...base, hidden: 0 }, { partial: false }).ok).toBe(false);
+    expect(parseProductBody({ ...base, isMystery: "yes" }, { partial: false }).ok).toBe(false);
   });
 
   it("normalises blank description / imageUrl to null", () => {
