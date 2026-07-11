@@ -35,7 +35,7 @@ export function publicConfigurationStatus() {
   return {
     supabaseUrl: validSupabaseUrl,
     supabaseKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
-    whatsapp: /^\d{7,15}$/.test(WHATSAPP_NUMBER.replace(/\D/g, "")),
+    whatsapp: /^\d{7,15}$/.test((process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "").replace(/\D/g, "")),
     siteUrl: validSiteUrl,
   };
 }
