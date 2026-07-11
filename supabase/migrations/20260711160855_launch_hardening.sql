@@ -71,6 +71,10 @@ begin
       add constraint products_visible_listing_complete
       check (
         hidden
+        -- Mystery kits are intentionally visible without a product photo; they
+        -- render via MysteryVisual, not image_url. Exempt them so editing a
+        -- seeded mystery kit in the admin panel isn't rejected by this check.
+        or is_mystery
         or (
           cardinality(coalesce(sizes, array[]::text[])) > 0
           and nullif(btrim(image_url), '') is not null
