@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { isSoldOut } from "@/lib/catalog";
+import { mysteryKitDescription } from "@/lib/mystery";
 
 // Scattered twinkling sparkles over the mystery card header.
 const SPARKLES = [
@@ -14,7 +15,7 @@ const SPARKLES = [
 // white JerseyCard used in the country grid.
 export function MysteryCard({ product, popular }: { product: Product; popular?: boolean }) {
   const soldOut = isSoldOut(product);
-  const tagline = product.description?.trim() || "A genuine in-stock kit, hand-picked for you.";
+  const tagline = mysteryKitDescription(product.name);
 
   return (
     <Link

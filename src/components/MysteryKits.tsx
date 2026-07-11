@@ -22,8 +22,8 @@ export function MysteryKits({ kits }: { kits: Product[] }) {
               Mystery Kits
             </h2>
             <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/75">
-              Pay less, get surprised. Pick your size — we pick the badge from our in-stock
-              gear and ship you a genuine kit you didn&apos;t see coming.
+              Pay less, get surprised. Pick your size — we choose an in-stock replica kit
+              and keep the team a surprise until it arrives.
             </p>
 
             <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

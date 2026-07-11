@@ -17,7 +17,13 @@ beforeAll(() => {
 // Replicates auth.ts's signing so the test can craft tokens (e.g. an expired one)
 // that carry a valid signature but an invalid payload.
 function sign(payload: string): string {
-  return crypto.createHmac("sha256", SECRET).update(payload).digest("hex");
+  const key = crypto
+    .createHash("sha256")
+    .update(SECRET)
+    .update("\0")
+    .update(PASSWORD)
+    .digest();
+  return crypto.createHmac("sha256", key).update(payload).digest("hex");
 }
 
 describe("session tokens", () => {
@@ -51,6 +57,13 @@ describe("session tokens", () => {
     const past = String(Date.now() - 1000);
     const expired = `${past}.${sign(past)}`;
     expect(verifySessionToken(expired)).toBe(false);
+  });
+
+  it("invalidates an existing token when the manager password changes", () => {
+    const token = createSessionToken();
+    process.env.ADMIN_PASSWORD = "rotated-password";
+    expect(verifySessionToken(token)).toBe(false);
+    process.env.ADMIN_PASSWORD = PASSWORD;
   });
 });
 

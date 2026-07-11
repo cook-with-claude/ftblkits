@@ -16,6 +16,15 @@ interface ProductRow {
   is_mystery: boolean | null;
 }
 
+export type CatalogResult =
+  | { status: "ok"; products: Product[] }
+  | { status: "unavailable"; products: [] };
+
+export type ProductResult =
+  | { status: "ok"; product: Product }
+  | { status: "not_found" }
+  | { status: "unavailable" };
+
 function toProduct(row: ProductRow): Product {
   return {
     id: row.id,
@@ -30,7 +39,7 @@ function toProduct(row: ProductRow): Product {
   };
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(): Promise<CatalogResult> {
   try {
     const { data, error } = await supabase
       .from("products")
@@ -38,18 +47,17 @@ export async function getAllProducts(): Promise<Product[]> {
       .eq("hidden", false)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => toProduct(row as ProductRow));
+    return { status: "ok", products: (data ?? []).map((row) => toProduct(row as ProductRow)) };
   } catch (err) {
-    // Never let a Supabase outage (e.g. a free-tier project auto-paused after
-    // inactivity, or a network blip) crash the whole page. Log it and render
-    // an empty catalog so the rest of the site stays up.
+    // Preserve the distinction between a real empty catalog and an outage so
+    // the storefront can show an honest temporary-unavailability state.
     console.error("[queries] getAllProducts failed:", err);
-    return [];
+    return { status: "unavailable", products: [] };
   }
 }
 
-export async function getProductById(id: string): Promise<Product | null> {
-  if (!isUuid(id)) return null;
+export async function getProductById(id: string): Promise<ProductResult> {
+  if (!isUuid(id)) return { status: "not_found" };
 
   try {
     const { data, error } = await supabase
@@ -59,11 +67,22 @@ export async function getProductById(id: string): Promise<Product | null> {
       .eq("hidden", false)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return data ? toProduct(data as ProductRow) : null;
+    return data
+      ? { status: "ok", product: toProduct(data as ProductRow) }
+      : { status: "not_found" };
   } catch (err) {
-    // Same reasoning as getAllProducts: degrade to "not found" (a 404) rather
-    // than a 500 if Supabase is unreachable.
+    // Do not turn an outage into a false 404; the page error boundary shows a
+    // retryable temporary-unavailability state instead.
     console.error(`[queries] getProductById(${id}) failed:`, err);
-    return null;
+    return { status: "unavailable" };
+  }
+}
+
+export async function checkCatalogConnection(): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("products").select("id").limit(1);
+    return !error;
+  } catch {
+    return false;
   }
 }

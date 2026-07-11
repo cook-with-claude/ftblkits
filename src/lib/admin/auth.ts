@@ -14,8 +14,25 @@ function secret(): string {
   return s;
 }
 
+function configuredPassword(): string {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) throw new Error("ADMIN_PASSWORD is not set");
+  return password;
+}
+
+// Bind sessions to both secrets. Rotating either the session secret or the
+// manager password immediately invalidates every previously issued cookie.
+function signingKey(): Buffer {
+  return crypto
+    .createHash("sha256")
+    .update(secret())
+    .update("\0")
+    .update(configuredPassword())
+    .digest();
+}
+
 function sign(payload: string): string {
-  return crypto.createHmac("sha256", secret()).update(payload).digest("hex");
+  return crypto.createHmac("sha256", signingKey()).update(payload).digest("hex");
 }
 
 function safeEqual(a: string, b: string): boolean {
@@ -27,8 +44,7 @@ function safeEqual(a: string, b: string): boolean {
 
 // Constant-time password check (compares fixed-length SHA-256 hashes).
 export function passwordMatches(input: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) throw new Error("ADMIN_PASSWORD is not set");
+  const expected = configuredPassword();
   const hash = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
   return safeEqual(hash(input), hash(expected));
 }

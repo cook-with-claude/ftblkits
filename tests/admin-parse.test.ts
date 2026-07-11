@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { parseProductBody, toAdminProduct } from "@/lib/admin/server";
+import { beforeAll, describe, it, expect } from "vitest";
+import { parseProductBody, toAdminProduct, validatePublishableProduct } from "@/lib/admin/server";
+import { PRODUCT_LIMITS } from "@/lib/admin/validation";
+
+const IMAGE_URL = "https://project.supabase.co/storage/v1/object/public/kits/test.jpg";
+
+beforeAll(() => {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+});
 
 // Helper to pull the row out of a successful parse, failing loudly otherwise.
 function row(body: unknown, partial: boolean): Record<string, unknown> {
@@ -9,19 +16,31 @@ function row(body: unknown, partial: boolean): Record<string, unknown> {
 }
 
 describe("parseProductBody — create (partial: false)", () => {
-  const valid = { name: "Argentina Home", country: "Argentina", price: 28 };
+  const valid = {
+    name: "Argentina Home",
+    country: "Argentina",
+    price: 28,
+    sizes: ["S", "M"],
+    imageUrl: IMAGE_URL,
+  };
 
-  it("accepts a minimal valid body and fills defaults", () => {
+  it("accepts a complete visible listing and fills defaults", () => {
     const r = row(valid, false);
     expect(r).toMatchObject({
       name: "Argentina Home",
       country: "Argentina",
       price: 28,
-      sizes: [],
+      sizes: ["S", "M"],
+      image_url: IMAGE_URL,
       in_stock: true,
       hidden: false,
       is_mystery: false,
     });
+  });
+
+  it("allows an incomplete hidden draft", () => {
+    const r = row({ name: "Draft", country: "Argentina", price: 10, hidden: true }, false);
+    expect(r).toMatchObject({ hidden: true, sizes: [], image_url: null });
   });
 
   it("requires name", () => {
@@ -54,6 +73,14 @@ describe("parseProductBody — create (partial: false)", () => {
     expect(res.ok).toBe(false);
   });
 
+  it("accepts decimal prices with two places", () => {
+    expect(row({ ...valid, price: 26.99 }, false).price).toBe(26.99);
+  });
+
+  it("rejects prices with more than two decimal places", () => {
+    expect(parseProductBody({ ...valid, price: 26.999 }, { partial: false }).ok).toBe(false);
+  });
+
   it("trims whitespace-only name to an error", () => {
     const res = parseProductBody({ ...valid, name: "   " }, { partial: false });
     expect(res).toEqual({ ok: false, error: "Name is required" });
@@ -61,7 +88,7 @@ describe("parseProductBody — create (partial: false)", () => {
 });
 
 describe("parseProductBody — sizes coercion", () => {
-  const base = { name: "A", country: "B", price: 1 };
+  const base = { name: "A", country: "B", price: 1, imageUrl: IMAGE_URL };
 
   it("splits a comma-separated string and trims", () => {
     expect(row({ ...base, sizes: "S, M , L" }, false).sizes).toEqual(["S", "M", "L"]);
@@ -70,10 +97,14 @@ describe("parseProductBody — sizes coercion", () => {
   it("accepts an array and drops empties", () => {
     expect(row({ ...base, sizes: ["S", "", " L "] }, false).sizes).toEqual(["S", "L"]);
   });
+
+  it("deduplicates sizes case-insensitively", () => {
+    expect(row({ ...base, sizes: ["M", "m", " L "] }, false).sizes).toEqual(["M", "L"]);
+  });
 });
 
 describe("parseProductBody — flags & nullable fields", () => {
-  const base = { name: "A", country: "B", price: 1 };
+  const base = { name: "A", country: "B", price: 1, sizes: ["M"], imageUrl: IMAGE_URL };
 
   it("accepts boolean flags", () => {
     const r = row({ ...base, inStock: true, hidden: false, isMystery: true }, false);
@@ -96,9 +127,19 @@ describe("parseProductBody — flags & nullable fields", () => {
   });
 
   it("normalises blank description / imageUrl to null", () => {
-    const r = row({ ...base, description: "   ", imageUrl: "" }, false);
+    const r = row({ ...base, hidden: true, description: "   ", imageUrl: "" }, false);
     expect(r.description).toBeNull();
     expect(r.image_url).toBeNull();
+  });
+
+  it("rejects arbitrary external image hosts", () => {
+    const res = parseProductBody({ ...base, imageUrl: "https://example.com/kit.jpg" }, { partial: false });
+    expect(res.ok).toBe(false);
+  });
+
+  it("enforces text length limits", () => {
+    const res = parseProductBody({ ...base, name: "x".repeat(PRODUCT_LIMITS.name + 1) }, { partial: false });
+    expect(res.ok).toBe(false);
   });
 });
 
@@ -145,5 +186,16 @@ describe("toAdminProduct", () => {
       isMystery: false,
       description: null,
     });
+  });
+});
+
+describe("validatePublishableProduct", () => {
+  it("requires sizes and a managed photo for visible listings", () => {
+    expect(validatePublishableProduct({ hidden: false, sizes: [], image_url: null })).toContain("size");
+    expect(validatePublishableProduct({ hidden: false, sizes: ["M"], image_url: null })).toContain("photo");
+  });
+
+  it("allows hidden drafts to remain incomplete", () => {
+    expect(validatePublishableProduct({ hidden: true, sizes: [], image_url: null })).toBeNull();
   });
 });

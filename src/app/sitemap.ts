@@ -1,17 +1,13 @@
 import type { MetadataRoute } from "next";
-import { supabase } from "@/lib/supabase/client";
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://the-goal-zone-kits.netlify.app";
+import { SITE_URL } from "@/lib/config";
+import { getAllProducts } from "@/lib/supabase/queries";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data: products } = await supabase
-    .from("products")
-    .select("id")
-    .eq("in_stock", true)
-    .eq("hidden", false);
+  const catalog = await getAllProducts();
+  const products = catalog.status === "ok" ? catalog.products.filter((product) => product.inStock) : [];
 
-  const jerseyUrls: MetadataRoute.Sitemap = (products ?? []).map((p) => ({
-    url: `${BASE_URL}/jersey/${p.id}`,
+  const jerseyUrls: MetadataRoute.Sitemap = products.map((product) => ({
+    url: `${SITE_URL}/jersey/${product.id}`,
     lastModified: new Date(),
     changeFrequency: "weekly",
     priority: 0.8,
@@ -19,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: BASE_URL,
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { AdminProduct } from "@/lib/admin/types";
-import { createProduct, uploadImage } from "./api";
+import { createProduct, discardUploadedImage, uploadImage } from "./api";
+import { PRODUCT_LIMITS } from "@/lib/admin/validation";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -16,7 +17,7 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
   const [f, setF] = useState(EMPTY);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isMystery, setIsMystery] = useState(false);
-  const [busy, setBusy] = useState<null | "upload" | "create">(null);
+  const [busy, setBusy] = useState<null | "upload" | "create" | "cleanup">(null);
   const [error, setError] = useState<string | null>(null);
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -28,13 +29,33 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
     setBusy("upload");
     setError(null);
     try {
-      setImageUrl(await uploadImage(file));
+      const previous = imageUrl;
+      const uploaded = await uploadImage(file);
+      setImageUrl(uploaded);
+      if (previous) await discardUploadedImage(previous);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(null);
       e.target.value = "";
     }
+  }
+
+  async function cancel() {
+    setError(null);
+    if (imageUrl) {
+      setBusy("cleanup");
+      try {
+        await discardUploadedImage(imageUrl);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not discard uploaded photo");
+        setBusy(null);
+        return;
+      }
+    }
+    setImageUrl(null);
+    setBusy(null);
+    setOpen(false);
   }
 
   async function submit(e: React.FormEvent) {
@@ -83,24 +104,24 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label className={labelClass}>Name</label>
-          <input className={fieldClass} value={f.name} onChange={set("name")} required />
+          <input className={fieldClass} value={f.name} onChange={set("name")} maxLength={PRODUCT_LIMITS.name} required />
         </div>
         <div>
           <label className={labelClass}>Country</label>
-          <input className={fieldClass} value={f.country} onChange={set("country")} required />
+          <input className={fieldClass} value={f.country} onChange={set("country")} maxLength={PRODUCT_LIMITS.country} required />
         </div>
         <div>
           <label className={labelClass}>Price ($)</label>
-          <input className={fieldClass} type="number" min="0" step="1" value={f.price} onChange={set("price")} required />
+          <input className={fieldClass} type="number" min="0" max={PRODUCT_LIMITS.price} step="0.01" value={f.price} onChange={set("price")} required />
         </div>
         <div>
           <label className={labelClass}>Sizes (comma separated)</label>
-          <input className={fieldClass} value={f.sizes} onChange={set("sizes")} placeholder="S, M, L, XL" />
+          <input className={fieldClass} value={f.sizes} onChange={set("sizes")} placeholder="S, M, L, XL" required />
         </div>
       </div>
       <div className="mt-3">
         <label className={labelClass}>Description</label>
-        <textarea className={`${fieldClass} min-h-16`} value={f.description} onChange={set("description")} />
+        <textarea className={`${fieldClass} min-h-16`} value={f.description} onChange={set("description")} maxLength={PRODUCT_LIMITS.description} />
       </div>
       <div className="mt-3">
         <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gz-navy">
@@ -124,7 +145,7 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
             Photo
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif"
               onChange={onPickImage}
               disabled={busy === "upload"}
               className="mt-1 block cursor-pointer text-sm font-normal normal-case tracking-normal text-gz-body file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gz-navy file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:text-white"
@@ -138,17 +159,18 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
       <div className="mt-4 flex justify-end gap-2">
         <button
           type="button"
-          onClick={() => { setOpen(false); setError(null); }}
+          onClick={cancel}
+          disabled={busy !== null}
           className="cursor-pointer rounded-full border border-gz-border px-5 py-2 text-sm font-bold text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt"
         >
-          Cancel
+          {busy === "cleanup" ? "Cleaning up…" : "Cancel"}
         </button>
         <button
           type="submit"
-          disabled={busy !== null}
+          disabled={busy !== null || imageUrl === null}
           className="cursor-pointer rounded-full bg-gz-green px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy === "create" ? "Adding…" : busy === "upload" ? "Uploading…" : "Add kit"}
+          {busy === "create" ? "Adding…" : busy === "upload" ? "Uploading…" : imageUrl ? "Add kit" : "Upload a photo"}
         </button>
       </div>
     </form>
