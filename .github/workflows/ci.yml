@@ -1,0 +1,41 @@
+name: CI
+
+# Lint, test, and build on every push and pull request so broken code is caught
+# before it reaches a deploy. Separate from the Supabase keep-alive workflow.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Dummy values so `next build` doesn't throw on modules that read env at
+    # import/build time. No real secrets are needed to lint, test, or compile.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+      NEXT_PUBLIC_WHATSAPP_NUMBER: "9613000000"
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SUPABASE_SERVICE_ROLE_KEY: service_role_ci
+      ADMIN_PASSWORD: ci-password
+      ADMIN_SESSION_SECRET: ci-session-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
