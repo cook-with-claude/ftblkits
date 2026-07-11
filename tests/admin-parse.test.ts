@@ -198,4 +198,16 @@ describe("validatePublishableProduct", () => {
   it("allows hidden drafts to remain incomplete", () => {
     expect(validatePublishableProduct({ hidden: true, sizes: [], image_url: null })).toBeNull();
   });
+
+  it("allows a visible mystery kit without a photo", () => {
+    expect(
+      validatePublishableProduct({ hidden: false, sizes: ["M"], image_url: null, is_mystery: true }),
+    ).toBeNull();
+  });
+
+  it("still requires sizes for a visible mystery kit", () => {
+    expect(
+      validatePublishableProduct({ hidden: false, sizes: [], image_url: null, is_mystery: true }),
+    ).toContain("size");
+  });
 });

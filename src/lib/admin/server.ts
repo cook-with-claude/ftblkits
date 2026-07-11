@@ -120,6 +120,11 @@ export function validatePublishableProduct(row: Record<string, unknown>): string
   if (!Array.isArray(row.sizes) || row.sizes.length === 0) {
     return "Add at least one size before showing this kit in the shop";
   }
+  // Mystery kits are intentionally shown without a product photo (rendered via
+  // MysteryVisual, not image_url), so don't require one. Mirrors the
+  // products_visible_listing_complete database constraint. Without this,
+  // any edit to a visible mystery kit would be rejected here.
+  if (row.is_mystery === true) return null;
   if (typeof row.image_url !== "string" || !isAllowedProductImageUrl(row.image_url)) {
     return "Upload a valid kit photo before showing this kit in the shop";
   }
