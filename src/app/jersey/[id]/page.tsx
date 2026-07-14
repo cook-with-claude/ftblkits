@@ -104,7 +104,7 @@ export default async function JerseyPage({
 
             {(product.isMystery || product.description) && (
               <p className="mt-4 text-sm leading-relaxed text-gz-body">
-                {product.isMystery ? mysteryKitDescription(product.name) : product.description}
+                {product.isMystery ? mysteryKitDescription() : product.description}
               </p>
             )}
 

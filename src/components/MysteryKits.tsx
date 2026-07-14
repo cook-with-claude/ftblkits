@@ -28,7 +28,7 @@ export function MysteryKits({ kits }: { kits: Product[] }) {
 
             <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {kits.map((kit) => (
-                <MysteryCard key={kit.id} product={kit} popular={/\bpro\b/i.test(kit.name)} />
+                <MysteryCard key={kit.id} product={kit} />
               ))}
             </div>
           </div>

@@ -13,21 +13,15 @@ const SPARKLES = [
 // A mystery "tier" card. Lives inside the dark Mystery Kits panel: a glassy translucent
 // body with a gradient header holding a floating "?" and sparkles, distinct from the
 // white JerseyCard used in the country grid.
-export function MysteryCard({ product, popular }: { product: Product; popular?: boolean }) {
+export function MysteryCard({ product }: { product: Product }) {
   const soldOut = isSoldOut(product);
-  const tagline = mysteryKitDescription(product.name);
+  const tagline = mysteryKitDescription();
 
   return (
     <Link
       href={`/jersey/${product.id}`}
       className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta"
     >
-      {popular && (
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-gz-magenta px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-gz-navy-deep">
-          Most popular
-        </span>
-      )}
-
       <div
         className="relative h-40 overflow-hidden"
         style={{ background: "radial-gradient(130% 130% at 30% 12%, #3a1450, #15206b 72%)" }}
