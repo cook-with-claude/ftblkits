@@ -4,6 +4,140 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-07-27 (evening) — Codex review applied, migrations run, branches consolidated
+
+**Participants:** Nadim (owner) + Codex (review) + Claude Code (Opus 5)
+**Branch:** `rebrand` — now 19 commits, pushed. Still **not merged, not deployed.**
+
+### 1. What the review found
+Codex reviewed the phase-1 branch and found eight real bugs, all confirmed independently
+before accepting:
+- The sync trigger kept a mismatch when an INSERT supplied **both** `team` and `country`
+  with different values, and never repaired pre-existing drift on an unrelated UPDATE.
+- `revoke execute … from anon, authenticated` was a **no-op**: Postgres grants EXECUTE to
+  PUBLIC by default and those roles inherit it, so there was no direct grant to revoke.
+  Confirmed via `proacl` showing `=X/postgres`. **Not exploitable** — the functions are
+  SECURITY INVOKER and anon lacks table privileges, verified by a live call returning
+  `42501`. Defense-in-depth only, despite the review's stronger wording.
+- `admin_delete_section(p_slug)` was slug-addressed, so a slug deleted and recreated for a
+  different row between the route's read and the RPC would delete the wrong section. Now
+  UUID-addressed.
+- The filter debounce could write stale params onto a URL the user had already navigated
+  away from.
+- `sitemap.xml` was static, so admin-created sections would never have appeared. Now
+  `force-dynamic` (confirmed `ƒ` in build output).
+- Section renames were not mirrored into loaded admin state; arbitrary unmatched URLs
+  bypassed the storefront 404; tabbing out of a nav dropdown left it open; several targets
+  were under 44px.
+
+### 2. The gap the review left
+Codex wrote three migrations but never applied them — correctly, since the prompt forbade
+destructive SQL against the live database. That left the branch **non-functional**: the code
+called `admin_delete_section(p_id)` while the database still had `(p_slug)`. Applied all
+three here after confirming all 16 rows would survive the new validation trigger, then ran a
+seven-case probe: drift repair, dangling-slug rejection (`23503`), duplicate rejection
+(`23514`), rename fan-out via plain SQL, delete leaving no ghost slugs, and the stale-rename
+guard (`P0002`). Advisors clean; data intact.
+
+### 3. CI gate
+The dependency gate began failing on two newly-published advisories present in the lockfile
+before this work: `sharp` via `next`, and `brace-expansion` via eslint's minimatch chain.
+Neither is fixable — npm's fixes are `next@14.2.35` and `eslint@10`, and overriding
+brace-expansion to the patched 5.0.8 breaks eslint outright (tried and reverted). Replaced
+`audit:launch` with `scripts/audit-launch.mjs`, which keeps the moderate threshold and skips
+only listed advisories, each with a reason and recheck trigger. Verified it still fails when
+an entry is removed. Raising the threshold to `high` was rejected — it would have silenced
+genuine moderate findings tree-wide to quiet two known ones.
+
+### 4. Branch tidy-up
+Git cannot hold refs named both `rebrand` and `rebrand/codex-review`, so the review branch
+had renamed the original to `rebrand-base`. Consolidated back to a single `rebrand` at the
+reviewed tip and force-pushed. The pre-review tip was `dab287d` if it is ever needed.
+
+### 5. Still open
+- **Not deployed.** After deploying, run the pending contract migration.
+- **Admin UI round trip** still unexercised — needs the owner's service-role key and password.
+- **Mobile** verified by Codex at 390px; could not be re-confirmed here (browser extension
+  disconnected mid-check).
+
+---
+
+## 2026-07-27 (afternoon) — Rebrand phase 1: real section pages, admin-managed taxonomy
+
+**Participants:** Nadim (owner) + Claude Code (Opus 5)
+**Branch:** `rebrand` (5 commits, **not merged, not deployed**)
+**Outcome:** The storefront is no longer one scrolling page. Sections are real pages you
+click into, they live in the database, and the owner manages them from `/admin`. Name,
+logo and palette deliberately unchanged.
+
+### 1. What changed
+- **`country` → `team`.** One free-text column was doing double duty — the "Shop by
+  Country" chips *and* half the search predicate — and assumed every kit belongs to a
+  nation. `team` holds "Argentina" or "Real Madrid"; the new sections carry the grouping.
+- **`sections` table + `products.sections text[]`.** Slug, label, nav group, sort order,
+  accent, description, hidden. RLS mirrors products: visible rows only, public read.
+- **Routes:** `(storefront)` group with a shared layout, `/kits`, `/kits/[section]`, a
+  group-level 404. Home is a landing page; `CatalogBrowser` and all four anchors are gone.
+- **Nav** is built from the database — featured sections as standalone links, the rest as
+  grouped dropdowns, with active-route highlighting, Escape-to-close, a mobile `<details>`
+  drawer and a skip link.
+- **Admin** gained a Sections tab (create / rename / reorder / recolour / hide / delete
+  with live kit counts) and a section picker on every kit.
+- **World Cup content removed:** the giant "26" watermark, the FIFA/host-nations eyebrow,
+  "Wear the tournament.", the footer's tournament line. Disclaimer broadened from "FIFA or
+  any national federation" to "any club, league or federation".
+
+### 2. Decisions worth remembering
+- **Expand/contract instead of a straight rename.** The approved plan called for a hard
+  `rename column`. That would have taken the *live shop down for the whole build*, not the
+  few minutes the plan assumed, because production still selects `country`. Instead both
+  columns exist and a trigger keeps them identical, so old and new code both work. The
+  contract half is parked at `supabase/migrations/PENDING_…_drop_country_column.sql.txt`,
+  saved as `.sql.txt` so it cannot be applied by accident.
+- **`text[]` of slugs, not a join table.** The admin routes have no transaction layer, so
+  a two-statement save could half-apply. In place of a foreign key: a slug-format CHECK
+  (the slug is both a URL segment and a PostgREST `cs.{}` filter value, so a comma would
+  silently corrupt the query), a write-side existence check, and two SQL functions that do
+  the section change and the product fan-out in one transaction.
+- **Seeded only what is stocked** — 8 countries — plus hidden shells for five leagues,
+  Club Kits, Retro and 25/26. The reference site (goaldenlb.com) lists 50 countries and 30
+  leagues; copying that here would have meant 42 dead nav links and thin pages.
+- **Filters are not routed.** Every page is `force-dynamic`, so `router.replace` per
+  keystroke would be a server round-trip per character. Filters run locally and mirror into
+  the URL via `history.replaceState`.
+
+### 3. Two bugs found while verifying
+- **The root layout set `alternates.canonical: "/"`.** Next merges root metadata into every
+  route, so it was quietly telling search engines that every jersey page — and every
+  section page about to be added — was a duplicate of the homepage. Removed; each page now
+  sets its own. Confirmed in view-source.
+- **All 15 seeded kits share one `created_at`**, so row order (and "New Arrivals") was
+  non-deterministic between requests. Added an `id` tiebreaker.
+- Also: `jersey/[id]/not-found.tsx` rendered `text-white/70` on a white background, left
+  over from the pre-June dark theme. Deleted in favour of the group-level 404.
+
+### 4. Verification
+`npm test` **128 passing** (was 80), `tsc`, `eslint` and `next build` all clean. Against
+the live database: 11 visible sections, hidden ones blocked by RLS, per-section counts
+correct, anon writes rejected (42501), and probes proving the sync trigger works in all
+four directions and that the rename/delete RPCs fan out with no ghost slugs left behind.
+In the browser: dropdowns, Escape, active highlighting, `/kits/nonsense` → 404, hidden
+`/kits/premier-league` → 404, correct canonicals, 15 kits in both `national-teams` and
+`world-cup-2026` (proving multi-membership). Every admin route 401s without a session.
+
+### 5. Open items
+- **Not merged, not deployed.** Deploy, then run the pending contract migration.
+- **Mobile not visually verified** — the browser window would not resize. Needs a check on
+  a real phone: drawer, `<details>` groups, no horizontal overflow.
+- **Admin UI round trip not exercised** — `.env.local` has no service-role key or admin
+  password, and those are the owner's to supply. Needs the create → assign → rename →
+  re-slug → hide → delete walkthrough from the plan.
+- Name and logo unchanged by choice; palette kept by choice.
+- Still open from before: custom domain, analytics, `docs/superpowers/` still Sanity-era,
+  `docs/launch-readiness.md` still says "Conditional GO".
+
+---
+
 ## 2026-07-27 — Catch-up: pushed pending commit, wrote the rebrand + marketing docs
 
 **Participants:** Nadim (owner) + Claude Code (Opus 5)

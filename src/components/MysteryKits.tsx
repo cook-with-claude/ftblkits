@@ -7,7 +7,7 @@ export function MysteryKits({ kits }: { kits: Product[] }) {
   if (kits.length === 0) return null;
 
   return (
-    <section id="mystery" className="scroll-mt-24 pt-12">
+    <section className="pt-14">
       <div className="mx-auto max-w-6xl px-4">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gz-navy-deep via-gz-navy to-[#3a1450] px-6 py-10 sm:px-10 sm:py-12">
           {/* Accent glows */}

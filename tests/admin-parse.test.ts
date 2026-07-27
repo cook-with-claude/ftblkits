@@ -18,7 +18,7 @@ function row(body: unknown, partial: boolean): Record<string, unknown> {
 describe("parseProductBody — create (partial: false)", () => {
   const valid = {
     name: "Argentina Home",
-    country: "Argentina",
+    team: "Argentina",
     price: 28,
     sizes: ["S", "M"],
     imageUrl: IMAGE_URL,
@@ -28,7 +28,7 @@ describe("parseProductBody — create (partial: false)", () => {
     const r = row(valid, false);
     expect(r).toMatchObject({
       name: "Argentina Home",
-      country: "Argentina",
+      team: "Argentina",
       price: 28,
       sizes: ["S", "M"],
       image_url: IMAGE_URL,
@@ -39,23 +39,78 @@ describe("parseProductBody — create (partial: false)", () => {
   });
 
   it("allows an incomplete hidden draft", () => {
-    const r = row({ name: "Draft", country: "Argentina", price: 10, hidden: true }, false);
+    const r = row({ name: "Draft", team: "Argentina", price: 10, hidden: true }, false);
     expect(r).toMatchObject({ hidden: true, sizes: [], image_url: null });
   });
 
   it("requires name", () => {
-    const res = parseProductBody({ country: "Argentina", price: 28 }, { partial: false });
+    const res = parseProductBody({ team: "Argentina", price: 28 }, { partial: false });
     expect(res).toEqual({ ok: false, error: "Name is required" });
   });
 
-  it("requires country", () => {
+  it("requires team", () => {
     const res = parseProductBody({ name: "A", price: 28 }, { partial: false });
-    expect(res).toEqual({ ok: false, error: "Country is required" });
+    expect(res).toEqual({ ok: false, error: "Team is required" });
   });
 
   it("requires price", () => {
-    const res = parseProductBody({ name: "A", country: "Argentina" }, { partial: false });
+    const res = parseProductBody({ name: "A", team: "Argentina" }, { partial: false });
     expect(res).toEqual({ ok: false, error: "Price is required" });
+  });
+
+  // An admin tab opened before the country->team rename still posts `country`.
+  // Without an explicit rejection the key is ignored and everything else saves,
+  // which looks like success but silently drops the field.
+  it("rejects the pre-rename `country` key instead of silently ignoring it", () => {
+    const { team, ...withoutTeam } = valid;
+    void team;
+    const res = parseProductBody({ ...withoutTeam, country: "Argentina" }, { partial: false });
+    expect(res.ok).toBe(false);
+
+    const patch = parseProductBody({ country: "Brazil" }, { partial: true });
+    expect(patch.ok).toBe(false);
+  });
+
+  it("still accepts a body that sends both keys, preferring team", () => {
+    const r = row({ ...valid, country: "Ignored" }, false);
+    expect(r.team).toBe("Argentina");
+    expect(r.country).toBeUndefined();
+  });
+
+  describe("sections", () => {
+    it("defaults to an empty array on create", () => {
+      expect(row(valid, false).sections).toEqual([]);
+    });
+
+    it("accepts an array of slugs and deduplicates", () => {
+      expect(row({ ...valid, sections: ["la-liga", "la-liga", " serie-a "] }, false).sections).toEqual([
+        "la-liga",
+        "serie-a",
+      ]);
+    });
+
+    it("accepts a comma-separated string, matching how sizes are handled", () => {
+      expect(row({ ...valid, sections: "la-liga, serie-a" }, false).sections).toEqual([
+        "la-liga",
+        "serie-a",
+      ]);
+    });
+
+    it("rejects slugs that would corrupt the section query or a URL", () => {
+      for (const bad of ["La Liga", "la,liga", "{la-liga}", "la--liga", "la/liga"]) {
+        const res = parseProductBody({ ...valid, sections: [bad] }, { partial: false });
+        expect(res.ok, bad).toBe(false);
+      }
+    });
+
+    it("caps how many sections one kit can be in", () => {
+      const many = Array.from({ length: PRODUCT_LIMITS.sections + 1 }, (_, i) => `section-${i}`);
+      expect(parseProductBody({ ...valid, sections: many }, { partial: false }).ok).toBe(false);
+    });
+
+    it("allows clearing every section on a patch", () => {
+      expect(row({ sections: [] }, true).sections).toEqual([]);
+    });
   });
 
   it("rejects a negative price", () => {
@@ -88,7 +143,7 @@ describe("parseProductBody — create (partial: false)", () => {
 });
 
 describe("parseProductBody — sizes coercion", () => {
-  const base = { name: "A", country: "B", price: 1, imageUrl: IMAGE_URL };
+  const base = { name: "A", team: "B", price: 1, imageUrl: IMAGE_URL };
 
   it("splits a comma-separated string and trims", () => {
     expect(row({ ...base, sizes: "S, M , L" }, false).sizes).toEqual(["S", "M", "L"]);
@@ -104,7 +159,7 @@ describe("parseProductBody — sizes coercion", () => {
 });
 
 describe("parseProductBody — flags & nullable fields", () => {
-  const base = { name: "A", country: "B", price: 1, sizes: ["M"], imageUrl: IMAGE_URL };
+  const base = { name: "A", team: "B", price: 1, sizes: ["M"], imageUrl: IMAGE_URL };
 
   it("accepts boolean flags", () => {
     const r = row({ ...base, inStock: true, hidden: false, isMystery: true }, false);
@@ -165,7 +220,7 @@ describe("toAdminProduct", () => {
     const product = toAdminProduct({
       id: "id-1",
       name: "Argentina Home",
-      country: "Argentina",
+      team: "Argentina",
       price: "28",
       sizes: null,
       image_url: null,
@@ -173,11 +228,12 @@ describe("toAdminProduct", () => {
       hidden: false,
       is_mystery: null,
       description: null,
+      sections: null,
     });
     expect(product).toEqual({
       id: "id-1",
       name: "Argentina Home",
-      country: "Argentina",
+      team: "Argentina",
       price: 28,
       sizes: [],
       imageUrl: null,
@@ -185,6 +241,7 @@ describe("toAdminProduct", () => {
       hidden: false,
       isMystery: false,
       description: null,
+      sections: [],
     });
   });
 });

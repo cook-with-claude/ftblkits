@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Header } from "@/components/Header";
 import { SizePicker } from "@/components/SizePicker";
 import { MysteryVisual } from "@/components/MysteryVisual";
 import { getProductById } from "@/lib/supabase/queries";
@@ -42,17 +41,16 @@ export default async function JerseyPage({
   const product = result.product;
 
   return (
-    <main className="pb-28">
-      <Header />
+    <div className="pb-28">
       <div className="mx-auto max-w-6xl px-4">
         <Link
-          href="/#catalog"
+          href="/kits"
           className="mt-5 inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Back to catalog
+          All kits
         </Link>
 
         <div className="mt-4 grid gap-8 md:grid-cols-2 md:items-start">
@@ -90,7 +88,7 @@ export default async function JerseyPage({
                 product.isMystery ? "text-gz-magenta" : "text-gz-red"
               }`}
             >
-              {product.isMystery ? "Mystery Kit" : product.country}
+              {product.isMystery ? "Mystery Kit" : product.team}
             </p>
             <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl uppercase leading-none text-gz-navy sm:text-4xl">
               {product.name}
@@ -134,6 +132,6 @@ export default async function JerseyPage({
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

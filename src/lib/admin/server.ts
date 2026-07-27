@@ -3,6 +3,8 @@ import { ADMIN_COOKIE, verifySessionToken } from "./auth";
 import { SITE_URL } from "@/lib/config";
 import type { AdminProduct } from "./types";
 import { PRODUCT_LIMITS } from "./validation";
+import { hasKey, parseBoolean } from "./parse";
+import { isValidSectionSlug } from "@/lib/sections";
 export { PRODUCT_LIMITS } from "./validation";
 
 // Returns a 401 response if the request lacks a valid admin session, else null.
@@ -53,12 +55,12 @@ export function requireSameOrigin(req: NextRequest): NextResponse | null {
 }
 
 export const ADMIN_COLUMNS =
-  "id, name, country, price, sizes, image_url, in_stock, hidden, is_mystery, description";
+  "id, name, team, price, sizes, image_url, in_stock, hidden, is_mystery, description, sections";
 
 interface Row {
   id: string;
   name: string;
-  country: string;
+  team: string;
   price: number | string;
   sizes: string[] | null;
   image_url: string | null;
@@ -66,13 +68,14 @@ interface Row {
   hidden: boolean;
   is_mystery: boolean | null;
   description: string | null;
+  sections: string[] | null;
 }
 
 export function toAdminProduct(row: Row): AdminProduct {
   return {
     id: row.id,
     name: row.name,
-    country: row.country,
+    team: row.team,
     price: Number(row.price),
     sizes: row.sizes ?? [],
     imageUrl: row.image_url,
@@ -80,6 +83,7 @@ export function toAdminProduct(row: Row): AdminProduct {
     hidden: row.hidden,
     isMystery: row.is_mystery ?? false,
     description: row.description,
+    sections: row.sections ?? [],
   };
 }
 
@@ -131,18 +135,31 @@ export function validatePublishableProduct(row: Record<string, unknown>): string
   return null;
 }
 
-function parseBoolean(value: unknown): boolean | null {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true") return true;
-    if (normalized === "false") return false;
+// Deduplicated, trimmed, validated section slugs. Same shape as coerceSizes.
+function coerceSlugs(v: unknown): { ok: true; slugs: string[] } | { ok: false; error: string } {
+  const parts = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
+  const seen = new Set<string>();
+  const slugs: string[] = [];
+
+  for (const raw of parts) {
+    const slug = String(raw).trim();
+    if (!slug) continue;
+    if (!isValidSectionSlug(slug)) {
+      return { ok: false, error: `"${slug}" is not a valid section` };
+    }
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    slugs.push(slug);
   }
-  return null;
+
+  if (slugs.length > PRODUCT_LIMITS.sections) {
+    return { ok: false, error: `Use no more than ${PRODUCT_LIMITS.sections} sections` };
+  }
+  return { ok: true, slugs };
 }
 
 // Maps a JSON body to a DB-column object. `partial` (PATCH) only includes
-// provided keys; create (POST) requires name/country/price.
+// provided keys; create (POST) requires name/team/price.
 export function parseProductBody(
   body: unknown,
   { partial }: { partial: boolean },
@@ -153,7 +170,16 @@ export function parseProductBody(
   const b = body as Record<string, unknown>;
   const row: Record<string, unknown> = {};
 
-  const has = (k: string) => Object.prototype.hasOwnProperty.call(b, k);
+  const has = (k: string) => hasKey(b, k);
+
+  // `country` was renamed to `team` in the 2026-07 rebrand. An admin tab left
+  // open across the deploy still posts the old key; without this it would be
+  // silently ignored and every other field saved anyway — a partial write that
+  // looks like a success. Fail loudly instead. Safe to delete once no stale
+  // tabs can plausibly remain.
+  if (has("country") && !has("team")) {
+    return { ok: false, error: "This page is out of date — reload the admin panel and try again" };
+  }
 
   if (has("name")) {
     const name = String(b.name ?? "").trim();
@@ -163,13 +189,13 @@ export function parseProductBody(
     }
     row.name = name;
   }
-  if (has("country")) {
-    const country = String(b.country ?? "").trim();
-    if (!country) return { ok: false, error: "Country is required" };
-    if (country.length > PRODUCT_LIMITS.country) {
-      return { ok: false, error: `Country must be ${PRODUCT_LIMITS.country} characters or fewer` };
+  if (has("team")) {
+    const team = String(b.team ?? "").trim();
+    if (!team) return { ok: false, error: "Team is required" };
+    if (team.length > PRODUCT_LIMITS.team) {
+      return { ok: false, error: `Team must be ${PRODUCT_LIMITS.team} characters or fewer` };
     }
-    row.country = country;
+    row.team = team;
   }
   if (has("price")) {
     if (typeof b.price === "string" && b.price.trim() === "") {
@@ -233,16 +259,24 @@ export function parseProductBody(
     if (parsed === null) return { ok: false, error: "Mystery kit must be true or false" };
     row.is_mystery = parsed;
   }
+  if (has("sections")) {
+    // Format only. Whether each slug refers to a real section is checked in the
+    // route handler, which can query -- this stays synchronous and unit-testable.
+    const parsed = coerceSlugs(b.sections);
+    if (!parsed.ok) return { ok: false, error: parsed.error };
+    row.sections = parsed.slugs;
+  }
 
   if (!partial) {
     if (row.name === undefined) return { ok: false, error: "Name is required" };
-    if (row.country === undefined) return { ok: false, error: "Country is required" };
+    if (row.team === undefined) return { ok: false, error: "Team is required" };
     if (row.price === undefined) return { ok: false, error: "Price is required" };
     if (row.sizes === undefined) row.sizes = [];
     if (row.image_url === undefined) row.image_url = null;
     if (row.in_stock === undefined) row.in_stock = true;
     if (row.hidden === undefined) row.hidden = false;
     if (row.is_mystery === undefined) row.is_mystery = false;
+    if (row.sections === undefined) row.sections = [];
   }
 
   if (Object.keys(row).length === 0) return { ok: false, error: "Nothing to update" };

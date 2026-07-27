@@ -6,16 +6,40 @@ export function isSoldOut(product: Product): boolean {
 
 export interface CatalogFilter {
   query: string;
-  country?: string | null;
+  team?: string | null;
   inStockOnly?: boolean;
+}
+
+export interface CatalogFilterLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+// Builds the shareable filter URL without knowing about React or the browser.
+// Unrelated query params and the current fragment are deliberately preserved.
+export function buildCatalogFilterUrl(
+  location: CatalogFilterLocation,
+  filter: CatalogFilter,
+): string {
+  const params = new URLSearchParams(location.search);
+  if (filter.query) params.set("q", filter.query);
+  else params.delete("q");
+  if (filter.team) params.set("team", filter.team);
+  else params.delete("team");
+  if (filter.inStockOnly) params.set("stock", "1");
+  else params.delete("stock");
+
+  const search = params.toString();
+  return `${location.pathname}${search ? `?${search}` : ""}${location.hash}`;
 }
 
 export function filterProducts(products: Product[], filter: CatalogFilter): Product[] {
   const q = filter.query.trim().toLowerCase();
   return products.filter((p) => {
     if (filter.inStockOnly && !p.inStock) return false;
-    if (filter.country && p.country !== filter.country) return false;
-    if (q && !(p.name.toLowerCase().includes(q) || p.country.toLowerCase().includes(q))) {
+    if (filter.team && p.team !== filter.team) return false;
+    if (q && !(p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))) {
       return false;
     }
     return true;
@@ -27,23 +51,21 @@ export function sortProducts(products: Product[]): Product[] {
   return [...products].sort((a, b) => (a.inStock === b.inStock ? 0 : a.inStock ? -1 : 1));
 }
 
-// Unique country names, alphabetical — powers the "Shop by Country" filter.
-export function listCountries(products: Product[]): string[] {
-  return [...new Set(products.map((p) => p.country))].sort((a, b) => a.localeCompare(b));
-}
-
-// Newest first (DB already returns in that order); used for the arrivals rail.
-export function latestArrivals(products: Product[], limit = 10): Product[] {
-  return products.slice(0, limit);
+// Unique team names, alphabetical — powers the team filter within a section.
+// Callers pass regular kits only; a mystery tier's label is not a real team.
+export function listTeams(products: Product[]): string[] {
+  return [...new Set(products.filter((p) => !p.isMystery).map((p) => p.team))].sort((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 // Mystery "tier" listings (surprise kits chosen at fulfillment) — shown in their own
-// section, never mixed into the country browse, arrivals rail, or search.
+// section, never mixed into the main kit grid, arrivals rail, or search.
 export function mysteryKits(products: Product[]): Product[] {
   return products.filter((p) => p.isMystery);
 }
 
-// Everything that is a normal, specific national-team kit.
+// Everything that is a normal, specific kit (a named team's shirt).
 export function regularKits(products: Product[]): Product[] {
   return products.filter((p) => !p.isMystery);
 }

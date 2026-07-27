@@ -13,19 +13,22 @@ const hanken = Hanken_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  alternates: { canonical: "/" },
+  // No `alternates` here on purpose. Next merges root metadata into every route,
+  // so a canonical set here would tell search engines that /kits, every section
+  // page, and every jersey page are duplicates of the homepage. Each page sets
+  // its own canonical instead.
   title: { default: "The Goal Zone — Football Kits", template: "%s | The Goal Zone" },
-  description: "Replica national-team jerseys in Beirut. Browse, pick your size, order on WhatsApp.",
+  description:
+    "Replica football kits in Beirut — leagues, clubs, national teams and retro. Browse, pick your size, order on WhatsApp.",
   openGraph: {
     title: "The Goal Zone — Football Kits",
-    description: "Replica national-team jerseys in Beirut. Order on WhatsApp.",
+    description: "Replica football kits in Beirut. Order on WhatsApp.",
     type: "website",
     images: ["/logo.jpeg"],
   },
   verification: {
     google: "4DjHPNCVOoZJW8GClLr40jXPUyCM-zje_Xu9y7t957A",
   },
-  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

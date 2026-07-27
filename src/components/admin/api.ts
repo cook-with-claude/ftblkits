@@ -1,4 +1,4 @@
-import type { AdminProduct } from "@/lib/admin/types";
+import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 
 async function readError(res: Response): Promise<string> {
   const data = await res.json().catch(() => ({}));
@@ -13,7 +13,7 @@ export async function fetchProducts(): Promise<AdminProduct[]> {
 
 export interface ProductInput {
   name: string;
-  country: string;
+  team: string;
   price: number;
   sizes: string[];
   description: string | null;
@@ -21,6 +21,7 @@ export interface ProductInput {
   inStock: boolean;
   hidden: boolean;
   isMystery: boolean;
+  sections: string[];
 }
 
 export async function createProduct(input: ProductInput): Promise<AdminProduct> {
@@ -45,6 +46,50 @@ export async function updateProduct(id: string, input: Partial<ProductInput>): P
 
 export async function deleteProduct(id: string): Promise<void> {
   const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(await readError(res));
+}
+
+export interface SectionInput {
+  slug: string;
+  label: string;
+  navGroup: string;
+  sortOrder: number;
+  accent: string | null;
+  description: string | null;
+  hidden: boolean;
+}
+
+export async function fetchSections(): Promise<AdminSection[]> {
+  const res = await fetch("/api/admin/sections", { cache: "no-store" });
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()).sections;
+}
+
+export async function createSection(input: SectionInput): Promise<AdminSection> {
+  const res = await fetch("/api/admin/sections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()).section;
+}
+
+export async function updateSection(
+  id: string,
+  input: Partial<SectionInput>,
+): Promise<AdminSection> {
+  const res = await fetch(`/api/admin/sections/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()).section;
+}
+
+export async function deleteSection(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/sections/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await readError(res));
 }
 

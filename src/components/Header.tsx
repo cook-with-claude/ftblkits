@@ -1,23 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
-
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "World Cup Kits", href: "/#catalog" },
-  { label: "Shop by Country", href: "/#countries" },
-  { label: "Mystery Kits", href: "/#mystery" },
-  { label: "New Arrivals", href: "/#arrivals" },
-];
+import { groupSections, sectionHref, type Section } from "@/lib/sections";
+import { cartCount } from "@/lib/cart";
+import { CART_TRIGGER_ATTR, openCart, useCart } from "./cart/useCart";
 
 const waLink = buildWhatsappLink(
   WHATSAPP_NUMBER,
   "Hi GoalZone! I have a question about your kits.",
 );
+
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
+      <path d="M6 6h15l-1.5 9h-12z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 6L5 3H2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+    </svg>
+  );
+}
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -27,50 +34,227 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function Header() {
-  const [open, setOpen] = useState(false);
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={className} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const linkBase =
+  "inline-flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
+const linkIdle = "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red";
+const linkActive = "bg-gz-bg-alt text-gz-red";
+
+export function Header({ sections = [] }: { sections?: Section[] }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // The panel itself is rendered by StorefrontShell, outside this header: the
+  // header's backdrop-blur would otherwise clip a fixed-position overlay to its
+  // own box. This button just raises the open event.
+  const { lines } = useCart();
+  const count = cartCount(lines);
+
+  const groups = groupSections(sections);
+  const featured = groups.find((g) => g.group === "featured")?.sections ?? [];
+  const dropdowns = groups.filter((g) => g.group !== "featured");
+
+  // Exact match, not startsWith: "All Kits" (/kits) must not light up while you
+  // are on /kits/la-liga, which has its own entry.
+  const isActive = (href: string) => pathname === href;
+  const groupIsActive = (group: { sections: Section[] }) =>
+    group.sections.some((s) => isActive(sectionHref(s.slug)));
+
+  // Close everything on navigation, so a dropdown never survives a route change.
+  // Adjusted during render rather than in an effect: React applies it before
+  // painting, so the menu never flashes open on the new page.
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
+    setOpenGroup(null);
+    setDrawerOpen(false);
+  }
+
+  // Escape closes the open dropdown and returns focus to its trigger; a pointer
+  // press outside just closes it.
+  useEffect(() => {
+    if (!openGroup) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const trigger = navRef.current?.querySelector<HTMLButtonElement>(
+        `[data-group-trigger="${openGroup}"]`,
+      );
+      setOpenGroup(null);
+      trigger?.focus();
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setOpenGroup(null);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openGroup]);
+
+  // The mobile drawer is another disclosure. Escape should close it and put
+  // keyboard focus back where it came from, matching the desktop dropdowns.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setDrawerOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [drawerOpen]);
 
   return (
     <header className="sticky top-0 z-30 bg-gz-bg/95 backdrop-blur">
-      {/* World Cup tri-color motif */}
+      {/* Brand tri-color motif */}
       <div className="gz-flagbar h-1 w-full" aria-hidden="true" />
 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" aria-label="The Goal Zone home" className="flex items-center">
+        <Link href="/" aria-label="The Goal Zone home" className="flex min-h-11 items-center">
           <Image src="/logo.jpeg" alt="GoalZone" width={200} height={107} priority className="h-9 w-auto sm:h-11" />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="cursor-pointer rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt hover:text-gz-red"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav
+          ref={navRef}
+          className="hidden items-center gap-1 lg:flex"
+          aria-label="Primary"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setOpenGroup(null);
+            }
+          }}
+        >
+          <Link
+            href="/kits"
+            aria-current={isActive("/kits") ? "page" : undefined}
+            className={`${linkBase} ${isActive("/kits") ? linkActive : linkIdle}`}
+          >
+            All Kits
+          </Link>
+
+          {featured.map((section) => {
+            const href = sectionHref(section.slug);
+            return (
+              <Link
+                key={section.id}
+                href={href}
+                aria-current={isActive(href) ? "page" : undefined}
+                className={`${linkBase} ${isActive(href) ? linkActive : linkIdle}`}
+              >
+                {section.label}
+              </Link>
+            );
+          })}
+
+          {dropdowns.map((group) => {
+            const isOpen = openGroup === group.group;
+            const panelId = `nav-panel-${group.group}`;
+            return (
+              <div key={group.group} className="relative">
+                {/* Click, not hover: hover-only menus are unusable by keyboard
+                    and hostile on touch devices. */}
+                <button
+                  type="button"
+                  data-group-trigger={group.group}
+                  onClick={() => setOpenGroup(isOpen ? null : group.group)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className={`${linkBase} flex items-center gap-1 ${
+                    isOpen || groupIsActive(group) ? linkActive : linkIdle
+                  }`}
+                >
+                  {group.label}
+                  <ChevronIcon className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {isOpen && (
+                  <div
+                    id={panelId}
+                    className="absolute left-0 top-full z-40 mt-1 max-h-[70vh] min-w-56 overflow-y-auto rounded-xl border border-gz-border bg-gz-surface p-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)]"
+                  >
+                    <ul className={group.sections.length > 8 ? "sm:columns-2" : undefined}>
+                      {group.sections.map((section) => {
+                        const href = sectionHref(section.slug);
+                        return (
+                          <li key={section.id} className="break-inside-avoid">
+                            <Link
+                              href={href}
+                              aria-current={isActive(href) ? "page" : undefined}
+                              className={`flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold transition-colors duration-200 ${
+                                isActive(href)
+                                  ? "bg-gz-bg-alt text-gz-red"
+                                  : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"
+                              }`}
+                            >
+                              {section.label}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Always visible, unlike the WhatsApp button: on a phone this is the
+              only way back to the cart. */}
+          <button
+            {...{ [CART_TRIGGER_ATTR]: "" }}
+            type="button"
+            onClick={openCart}
+            aria-haspopup="dialog"
+            aria-label={count > 0 ? `Open cart, ${count} ${count === 1 ? "kit" : "kits"}` : "Open cart, empty"}
+            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+          >
+            <CartIcon className="h-5 w-5" />
+            {count > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gz-red px-1 text-[11px] font-extrabold text-white"
+              >
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
+          </button>
+
           <a
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity duration-200 hover:opacity-90 sm:flex"
+            className="hidden min-h-11 cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity duration-200 hover:opacity-90 sm:flex"
           >
             <WhatsAppIcon className="h-4 w-4" />
             Order
           </a>
 
           <button
+            ref={menuButtonRef}
             type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={open ? "Close menu" : "Open menu"}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt md:hidden"
+            onClick={() => setDrawerOpen((v) => !v)}
+            aria-expanded={drawerOpen}
+            aria-controls="mobile-primary-navigation"
+            aria-label={drawerOpen ? "Close menu" : "Open menu"}
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt lg:hidden"
           >
-            {open ? (
+            {drawerOpen ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6" aria-hidden="true">
                 <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
               </svg>
@@ -83,24 +267,72 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {open && (
-        <nav className="border-t border-gz-border bg-gz-bg px-4 py-2 md:hidden" aria-label="Mobile">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setOpen(false)}
-              className="block cursor-pointer rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt hover:text-gz-red"
-            >
-              {link.label}
-            </Link>
+      {/* Mobile drawer. Groups use native <details> so they are keyboard- and
+          screen-reader-accessible with no extra state to manage. */}
+      {drawerOpen && (
+        <nav
+          id="mobile-primary-navigation"
+          className="max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 lg:hidden"
+          aria-label="Mobile"
+        >
+          <Link
+            href="/kits"
+            aria-current={isActive("/kits") ? "page" : undefined}
+            className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors duration-200 ${
+              isActive("/kits") ? linkActive : linkIdle
+            }`}
+          >
+            All Kits
+          </Link>
+
+          {featured.map((section) => {
+            const href = sectionHref(section.slug);
+            return (
+              <Link
+                key={section.id}
+                href={href}
+                aria-current={isActive(href) ? "page" : undefined}
+                className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors duration-200 ${
+                  isActive(href) ? linkActive : linkIdle
+                }`}
+              >
+                {section.label}
+              </Link>
+            );
+          })}
+
+          {dropdowns.map((group) => (
+            <details key={group.group} open={groupIsActive(group)} className="group">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt [&::-webkit-details-marker]:hidden">
+                {group.label}
+                <ChevronIcon className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="pb-1 pl-3">
+                {group.sections.map((section) => {
+                  const href = sectionHref(section.slug);
+                  return (
+                    <Link
+                      key={section.id}
+                      href={href}
+                      aria-current={isActive(href) ? "page" : undefined}
+                      className={`flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-200 ${
+                        isActive(href)
+                          ? "bg-gz-bg-alt text-gz-red"
+                          : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"
+                      }`}
+                    >
+                      {section.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </details>
           ))}
+
           <a
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
             className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-whatsapp px-4 py-3 text-base font-extrabold text-black"
           >
             <WhatsAppIcon className="h-5 w-5" />

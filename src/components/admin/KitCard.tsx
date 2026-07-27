@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { AdminProduct } from "@/lib/admin/types";
+import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 import { deleteProduct, discardUploadedImage, updateProduct, uploadImage } from "./api";
 import { PRODUCT_LIMITS } from "@/lib/admin/validation";
+import { SectionPicker } from "./SectionPicker";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -12,15 +13,17 @@ const labelClass = "block text-[11px] font-extrabold uppercase tracking-widest t
 
 export function KitCard({
   product,
+  sections = [],
   onChange,
   onRemove,
 }: {
   product: AdminProduct;
+  sections?: AdminSection[];
   onChange: (p: AdminProduct) => void;
   onRemove: (id: string) => void;
 }) {
   const [name, setName] = useState(product.name);
-  const [country, setCountry] = useState(product.country);
+  const [team, setTeam] = useState(product.team);
   const [price, setPrice] = useState(String(product.price));
   const [sizes, setSizes] = useState(product.sizes.join(", "));
   const [description, setDescription] = useState(product.description ?? "");
@@ -28,6 +31,7 @@ export function KitCard({
   const [inStock, setInStock] = useState(product.inStock);
   const [hidden, setHidden] = useState(product.hidden);
   const [isMystery, setIsMystery] = useState(product.isMystery);
+  const [productSections, setProductSections] = useState<string[]>(product.sections);
 
   const [busy, setBusy] = useState<null | "save" | "upload" | "delete">(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -57,7 +61,7 @@ export function KitCard({
     try {
       const updated = await updateProduct(product.id, {
         name,
-        country,
+        team,
         price: Number(price),
         sizes: sizes.split(",").map((s) => s.trim()).filter(Boolean),
         description: description.trim() ? description.trim() : null,
@@ -65,8 +69,10 @@ export function KitCard({
         inStock,
         hidden,
         isMystery,
+        sections: productSections,
       });
       onChange(updated);
+      setProductSections(updated.sections);
       setMsg({ kind: "ok", text: "Saved." });
     } catch (err) {
       setMsg({ kind: "err", text: err instanceof Error ? err.message : "Save failed" });
@@ -105,8 +111,8 @@ export function KitCard({
               <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={PRODUCT_LIMITS.name} />
             </div>
             <div>
-              <label className={labelClass}>Country</label>
-              <input className={fieldClass} value={country} onChange={(e) => setCountry(e.target.value)} maxLength={PRODUCT_LIMITS.country} />
+              <label className={labelClass}>Team</label>
+              <input className={fieldClass} value={team} onChange={(e) => setTeam(e.target.value)} maxLength={PRODUCT_LIMITS.team} />
             </div>
             <div>
               <label className={labelClass}>Price ($)</label>
@@ -151,7 +157,17 @@ export function KitCard({
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-4">
+      {sections.length > 0 && (
+        <div className="mt-4 border-t border-gz-border pt-4">
+          <SectionPicker
+            sections={sections}
+            selected={productSections}
+            onChange={setProductSections}
+          />
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
         <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gz-navy">
           <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} className="h-4 w-4 cursor-pointer" />
           In stock

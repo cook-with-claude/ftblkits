@@ -7,10 +7,23 @@ new Supabase migration and updated Netlify build must be deployed before the cur
 production site receives final approval. Do not treat a successful build alone as a
 production launch.
 
-The dependency gate has no moderate, high, or critical findings. npm currently reports
-one low-severity esbuild advisory limited to the Windows development server; `npm audit
-fix --dry-run` proposes no compatible update. It is not shipped as a production runtime
-dependency and should be revisited when Vite/Vitest publish a compatible patched range.
+The dependency gate (`npm run audit:launch`) passes with **two acknowledged advisories**,
+both recorded with reasoning and a recheck trigger in `scripts/audit-launch.mjs`. The gate
+still fails on anything else at moderate or above — verified 2026-07-27 by removing an
+entry and confirming a non-zero exit — so this is an exception list, not a lowered bar.
+
+- **`sharp` (high, GHSA-f88m-g3jw-g9cj)** — libvips CVEs inherited through `next`'s
+  image-optimisation dependency. npm's only offered fix is `next@14.2.35`, two majors back,
+  which would undo the App Router the app is built on. Exposure is limited: images are
+  admin-uploaded only, content-sniffed in `src/lib/admin/image.ts`, and served from a single
+  allow-listed Supabase bucket. **Remove the exception when `next` depends on sharp ≥ 0.35.0.**
+- **`brace-expansion` (high, GHSA-mh99-v99m-4gvg)** — ReDoS reachable only via eslint's
+  minimatch chain, a devDependency that never runs in production. Overriding to the patched
+  5.0.8 was tried and breaks eslint outright (minimatch 3.x calls an API that major removed).
+
+A low-severity esbuild advisory also remains, limited to the development server. It is below
+the gate's threshold and is not a production runtime dependency; revisit when Vite/Vitest
+publish a compatible patched range.
 
 ## Required production configuration
 
@@ -78,6 +91,18 @@ After Netlify deploys:
 - Database rollback should restore the pre-migration policy/backup; do not disable RLS
   or expose service-role credentials as a workaround.
 - Change `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` immediately if either may have leaked.
+
+## Change log for signed-off copy
+
+Copy in this section was signed off by the owner, so changes to it are recorded rather
+than made silently.
+
+- **2026-07-27 (rebrand branch, not yet deployed):** the footer disclaimer changed from
+  "not affiliated with FIFA or any national federation" to "not affiliated with any club,
+  league or federation". The store now sells club and league kits, so the original wording
+  no longer covered the catalogue. Strictly broader, but it needs owner acknowledgement.
+  The word "replica" is unchanged and still appears in the hero, footer, metadata and
+  mystery-kit copy.
 
 ## Owner sign-off
 
