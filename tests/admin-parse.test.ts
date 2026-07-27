@@ -192,6 +192,7 @@ describe("toAdminProduct", () => {
       hidden: false,
       is_mystery: null,
       description: null,
+      sections: null,
     });
     expect(product).toEqual({
       id: "id-1",
@@ -204,6 +205,7 @@ describe("toAdminProduct", () => {
       hidden: false,
       isMystery: false,
       description: null,
+      sections: [],
     });
   });
 });

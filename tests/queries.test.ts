@@ -6,7 +6,13 @@ vi.mock("@/lib/supabase/client", () => ({
   supabase: { from: mocks.from },
 }));
 
-import { getAllProducts, getProductById } from "@/lib/supabase/queries";
+import {
+  getAllProducts,
+  getProductById,
+  getSections,
+  getSectionBySlug,
+  getProductsInSection,
+} from "@/lib/supabase/queries";
 
 function builder(result: { data: unknown; error: unknown }) {
   const query = {
@@ -52,6 +58,74 @@ describe("catalog query outcomes", () => {
 
   it("rejects malformed IDs without querying Supabase", async () => {
     await expect(getProductById("not-a-uuid")).resolves.toEqual({ status: "not_found" });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("section query outcomes", () => {
+  it("distinguishes no visible sections from an outage", async () => {
+    mocks.from.mockReturnValueOnce(builder({ data: [], error: null }));
+    await expect(getSections()).resolves.toEqual({ status: "ok", sections: [] });
+
+    mocks.from.mockReturnValueOnce(builder({ data: null, error: { message: "offline" } }));
+    await expect(getSections()).resolves.toEqual({ status: "unavailable", sections: [] });
+  });
+
+  it("maps a hidden or missing slug to not_found", async () => {
+    mocks.from.mockReturnValueOnce(builder({ data: null, error: null }));
+    await expect(getSectionBySlug("premier-league")).resolves.toEqual({ status: "not_found" });
+  });
+
+  it("rejects malformed slugs without querying Supabase", async () => {
+    await expect(getSectionBySlug("La Liga")).resolves.toEqual({ status: "not_found" });
+    await expect(getSectionBySlug("la,liga")).resolves.toEqual({ status: "not_found" });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it("maps section rows to the camelCase Section shape", async () => {
+    mocks.from.mockReturnValueOnce(
+      builder({
+        data: {
+          id: "s1",
+          slug: "la-liga",
+          label: "La Liga",
+          nav_group: "league",
+          sort_order: 20,
+          accent: "#ec1e5c",
+          description: "Spanish top flight.",
+          hidden: false,
+        },
+        error: null,
+      }),
+    );
+    await expect(getSectionBySlug("la-liga")).resolves.toEqual({
+      status: "ok",
+      section: {
+        id: "s1",
+        slug: "la-liga",
+        label: "La Liga",
+        navGroup: "league",
+        sortOrder: 20,
+        accent: "#ec1e5c",
+        description: "Spanish top flight.",
+        hidden: false,
+      },
+    });
+  });
+
+  it("distinguishes an empty section from an outage", async () => {
+    mocks.from.mockReturnValueOnce(builder({ data: [], error: null }));
+    await expect(getProductsInSection("la-liga")).resolves.toEqual({ status: "ok", products: [] });
+
+    mocks.from.mockReturnValueOnce(builder({ data: null, error: { message: "offline" } }));
+    await expect(getProductsInSection("la-liga")).resolves.toEqual({
+      status: "unavailable",
+      products: [],
+    });
+  });
+
+  it("treats a malformed section slug as empty, not an outage", async () => {
+    await expect(getProductsInSection("La Liga")).resolves.toEqual({ status: "ok", products: [] });
     expect(mocks.from).not.toHaveBeenCalled();
   });
 });

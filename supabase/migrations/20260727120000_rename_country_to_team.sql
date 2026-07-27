@@ -31,6 +31,9 @@ alter table public.products
 create or replace function public.products_sync_team_country()
 returns trigger
 language plpgsql
+-- Pinned so the function can't be hijacked by objects in a caller-controlled
+-- schema. Safe here because the body touches no tables by name.
+set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then

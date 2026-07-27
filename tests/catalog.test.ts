@@ -22,6 +22,7 @@ function make(overrides: Partial<Product> = {}): Product {
     inStock: overrides.inStock ?? true,
     description: overrides.description ?? null,
     isMystery: overrides.isMystery ?? false,
+    sections: overrides.sections ?? [],
   };
 }
 

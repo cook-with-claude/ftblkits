@@ -9,4 +9,5 @@ export interface AdminProduct {
   hidden: boolean;
   isMystery: boolean;
   description: string | null;
+  sections: string[];
 }

@@ -53,7 +53,7 @@ export function requireSameOrigin(req: NextRequest): NextResponse | null {
 }
 
 export const ADMIN_COLUMNS =
-  "id, name, team, price, sizes, image_url, in_stock, hidden, is_mystery, description";
+  "id, name, team, price, sizes, image_url, in_stock, hidden, is_mystery, description, sections";
 
 interface Row {
   id: string;
@@ -66,6 +66,7 @@ interface Row {
   hidden: boolean;
   is_mystery: boolean | null;
   description: string | null;
+  sections: string[] | null;
 }
 
 export function toAdminProduct(row: Row): AdminProduct {
@@ -80,6 +81,7 @@ export function toAdminProduct(row: Row): AdminProduct {
     hidden: row.hidden,
     isMystery: row.is_mystery ?? false,
     description: row.description,
+    sections: row.sections ?? [],
   };
 }
 

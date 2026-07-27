@@ -10,4 +10,7 @@ export interface Product {
   inStock: boolean;
   description: string | null;
   isMystery: boolean;
+  // Slugs of the sections this kit appears in. A kit can be in several at once
+  // (a club shirt is both a league kit and a Champions League kit).
+  sections: string[];
 }
