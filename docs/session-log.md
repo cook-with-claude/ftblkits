@@ -4,6 +4,64 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-07-27 (evening) — Codex review applied, migrations run, branches consolidated
+
+**Participants:** Nadim (owner) + Codex (review) + Claude Code (Opus 5)
+**Branch:** `rebrand` — now 19 commits, pushed. Still **not merged, not deployed.**
+
+### 1. What the review found
+Codex reviewed the phase-1 branch and found eight real bugs, all confirmed independently
+before accepting:
+- The sync trigger kept a mismatch when an INSERT supplied **both** `team` and `country`
+  with different values, and never repaired pre-existing drift on an unrelated UPDATE.
+- `revoke execute … from anon, authenticated` was a **no-op**: Postgres grants EXECUTE to
+  PUBLIC by default and those roles inherit it, so there was no direct grant to revoke.
+  Confirmed via `proacl` showing `=X/postgres`. **Not exploitable** — the functions are
+  SECURITY INVOKER and anon lacks table privileges, verified by a live call returning
+  `42501`. Defense-in-depth only, despite the review's stronger wording.
+- `admin_delete_section(p_slug)` was slug-addressed, so a slug deleted and recreated for a
+  different row between the route's read and the RPC would delete the wrong section. Now
+  UUID-addressed.
+- The filter debounce could write stale params onto a URL the user had already navigated
+  away from.
+- `sitemap.xml` was static, so admin-created sections would never have appeared. Now
+  `force-dynamic` (confirmed `ƒ` in build output).
+- Section renames were not mirrored into loaded admin state; arbitrary unmatched URLs
+  bypassed the storefront 404; tabbing out of a nav dropdown left it open; several targets
+  were under 44px.
+
+### 2. The gap the review left
+Codex wrote three migrations but never applied them — correctly, since the prompt forbade
+destructive SQL against the live database. That left the branch **non-functional**: the code
+called `admin_delete_section(p_id)` while the database still had `(p_slug)`. Applied all
+three here after confirming all 16 rows would survive the new validation trigger, then ran a
+seven-case probe: drift repair, dangling-slug rejection (`23503`), duplicate rejection
+(`23514`), rename fan-out via plain SQL, delete leaving no ghost slugs, and the stale-rename
+guard (`P0002`). Advisors clean; data intact.
+
+### 3. CI gate
+The dependency gate began failing on two newly-published advisories present in the lockfile
+before this work: `sharp` via `next`, and `brace-expansion` via eslint's minimatch chain.
+Neither is fixable — npm's fixes are `next@14.2.35` and `eslint@10`, and overriding
+brace-expansion to the patched 5.0.8 breaks eslint outright (tried and reverted). Replaced
+`audit:launch` with `scripts/audit-launch.mjs`, which keeps the moderate threshold and skips
+only listed advisories, each with a reason and recheck trigger. Verified it still fails when
+an entry is removed. Raising the threshold to `high` was rejected — it would have silenced
+genuine moderate findings tree-wide to quiet two known ones.
+
+### 4. Branch tidy-up
+Git cannot hold refs named both `rebrand` and `rebrand/codex-review`, so the review branch
+had renamed the original to `rebrand-base`. Consolidated back to a single `rebrand` at the
+reviewed tip and force-pushed. The pre-review tip was `dab287d` if it is ever needed.
+
+### 5. Still open
+- **Not deployed.** After deploying, run the pending contract migration.
+- **Admin UI round trip** still unexercised — needs the owner's service-role key and password.
+- **Mobile** verified by Codex at 390px; could not be re-confirmed here (browser extension
+  disconnected mid-check).
+
+---
+
 ## 2026-07-27 (afternoon) — Rebrand phase 1: real section pages, admin-managed taxonomy
 
 **Participants:** Nadim (owner) + Claude Code (Opus 5)
