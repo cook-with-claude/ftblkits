@@ -25,7 +25,9 @@ export default async function StorefrontLayout({
       {/* On an outage this is [], and the header degrades to logo + All Kits +
           WhatsApp rather than failing the page. */}
       <Header sections={result.sections} />
-      <main id="main">{children}</main>
+      <main id="main" tabIndex={-1} className="focus:outline-none">
+        {children}
+      </main>
       <Footer sections={result.sections} />
     </>
   );

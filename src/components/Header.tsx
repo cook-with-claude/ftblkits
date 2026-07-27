@@ -30,7 +30,7 @@ function ChevronIcon({ className }: { className?: string }) {
 }
 
 const linkBase =
-  "cursor-pointer rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
+  "inline-flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
 const linkIdle = "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red";
 const linkActive = "bg-gz-bg-alt text-gz-red";
 
@@ -39,6 +39,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const groups = groupSections(sections);
   const featured = groups.find((g) => g.group === "featured")?.sections ?? [];
@@ -85,17 +86,39 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
     };
   }, [openGroup]);
 
+  // The mobile drawer is another disclosure. Escape should close it and put
+  // keyboard focus back where it came from, matching the desktop dropdowns.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setDrawerOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [drawerOpen]);
+
   return (
     <header className="sticky top-0 z-30 bg-gz-bg/95 backdrop-blur">
       {/* Brand tri-color motif */}
       <div className="gz-flagbar h-1 w-full" aria-hidden="true" />
 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" aria-label="The Goal Zone home" className="flex items-center">
+        <Link href="/" aria-label="The Goal Zone home" className="flex min-h-11 items-center">
           <Image src="/logo.jpeg" alt="GoalZone" width={200} height={107} priority className="h-9 w-auto sm:h-11" />
         </Link>
 
-        <nav ref={navRef} className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+        <nav
+          ref={navRef}
+          className="hidden items-center gap-1 lg:flex"
+          aria-label="Primary"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setOpenGroup(null);
+            }
+          }}
+        >
           <Link
             href="/kits"
             aria-current={isActive("/kits") ? "page" : undefined}
@@ -152,7 +175,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                             <Link
                               href={href}
                               aria-current={isActive(href) ? "page" : undefined}
-                              className={`block rounded-lg px-3 py-2 text-sm font-bold transition-colors duration-200 ${
+                              className={`flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold transition-colors duration-200 ${
                                 isActive(href)
                                   ? "bg-gz-bg-alt text-gz-red"
                                   : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"
@@ -176,16 +199,18 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity duration-200 hover:opacity-90 sm:flex"
+            className="hidden min-h-11 cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity duration-200 hover:opacity-90 sm:flex"
           >
             <WhatsAppIcon className="h-4 w-4" />
             Order
           </a>
 
           <button
+            ref={menuButtonRef}
             type="button"
             onClick={() => setDrawerOpen((v) => !v)}
             aria-expanded={drawerOpen}
+            aria-controls="mobile-primary-navigation"
             aria-label={drawerOpen ? "Close menu" : "Open menu"}
             className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt lg:hidden"
           >
@@ -205,7 +230,11 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
       {/* Mobile drawer. Groups use native <details> so they are keyboard- and
           screen-reader-accessible with no extra state to manage. */}
       {drawerOpen && (
-        <nav className="max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 lg:hidden" aria-label="Mobile">
+        <nav
+          id="mobile-primary-navigation"
+          className="max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 lg:hidden"
+          aria-label="Mobile"
+        >
           <Link
             href="/kits"
             aria-current={isActive("/kits") ? "page" : undefined}
@@ -234,7 +263,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
 
           {dropdowns.map((group) => (
             <details key={group.group} open={groupIsActive(group)} className="group">
-              <summary className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt [&::-webkit-details-marker]:hidden">
                 {group.label}
                 <ChevronIcon className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" />
               </summary>
@@ -246,7 +275,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                       key={section.id}
                       href={href}
                       aria-current={isActive(href) ? "page" : undefined}
-                      className={`block rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-200 ${
+                      className={`flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-200 ${
                         isActive(href)
                           ? "bg-gz-bg-alt text-gz-red"
                           : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"
