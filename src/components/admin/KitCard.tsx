@@ -20,7 +20,7 @@ export function KitCard({
   onRemove: (id: string) => void;
 }) {
   const [name, setName] = useState(product.name);
-  const [country, setCountry] = useState(product.country);
+  const [team, setTeam] = useState(product.team);
   const [price, setPrice] = useState(String(product.price));
   const [sizes, setSizes] = useState(product.sizes.join(", "));
   const [description, setDescription] = useState(product.description ?? "");
@@ -57,7 +57,7 @@ export function KitCard({
     try {
       const updated = await updateProduct(product.id, {
         name,
-        country,
+        team,
         price: Number(price),
         sizes: sizes.split(",").map((s) => s.trim()).filter(Boolean),
         description: description.trim() ? description.trim() : null,
@@ -105,8 +105,8 @@ export function KitCard({
               <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={PRODUCT_LIMITS.name} />
             </div>
             <div>
-              <label className={labelClass}>Country</label>
-              <input className={fieldClass} value={country} onChange={(e) => setCountry(e.target.value)} maxLength={PRODUCT_LIMITS.country} />
+              <label className={labelClass}>Team</label>
+              <input className={fieldClass} value={team} onChange={(e) => setTeam(e.target.value)} maxLength={PRODUCT_LIMITS.team} />
             </div>
             <div>
               <label className={labelClass}>Price ($)</label>

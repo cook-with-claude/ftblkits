@@ -10,7 +10,7 @@ const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
 const labelClass = "block text-[11px] font-extrabold uppercase tracking-widest text-gz-muted";
 
-const EMPTY = { name: "", country: "", price: "", sizes: "", description: "" };
+const EMPTY = { name: "", team: "", price: "", sizes: "", description: "" };
 
 export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void }) {
   const [open, setOpen] = useState(false);
@@ -65,7 +65,7 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
     try {
       const created = await createProduct({
         name: f.name,
-        country: f.country,
+        team: f.team,
         price: Number(f.price),
         sizes: f.sizes.split(",").map((s) => s.trim()).filter(Boolean),
         description: f.description.trim() ? f.description.trim() : null,
@@ -107,8 +107,15 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
           <input className={fieldClass} value={f.name} onChange={set("name")} maxLength={PRODUCT_LIMITS.name} required />
         </div>
         <div>
-          <label className={labelClass}>Country</label>
-          <input className={fieldClass} value={f.country} onChange={set("country")} maxLength={PRODUCT_LIMITS.country} required />
+          <label className={labelClass}>Team</label>
+          <input
+            className={fieldClass}
+            value={f.team}
+            onChange={set("team")}
+            maxLength={PRODUCT_LIMITS.team}
+            placeholder="Argentina, Real Madrid…"
+            required
+          />
         </div>
         <div>
           <label className={labelClass}>Price ($)</label>

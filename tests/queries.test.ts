@@ -13,11 +13,19 @@ function builder(result: { data: unknown; error: unknown }) {
     select: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
+    contains: vi.fn(),
+    limit: vi.fn(),
     maybeSingle: vi.fn(),
+    // A real Supabase builder is thenable: every method chains, and awaiting the
+    // chain is what runs the query. Modelling it that way keeps this mock valid
+    // no matter how many filters/orders a query adds.
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve),
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
-  query.order.mockResolvedValue(result);
+  query.order.mockReturnValue(query);
+  query.contains.mockReturnValue(query);
+  query.limit.mockReturnValue(query);
   query.maybeSingle.mockResolvedValue(result);
   return query;
 }

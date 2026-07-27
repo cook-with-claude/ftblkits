@@ -91,7 +91,7 @@ export function Hero({ featured }: { featured: Product | null }) {
                 >
                   <div>
                     <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-gz-red">
-                      {featured.country}
+                      {featured.team}
                     </p>
                     <p className="mt-1 font-[family-name:var(--font-display)] text-[15px] uppercase leading-none">
                       {featured.name}

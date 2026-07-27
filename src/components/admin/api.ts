@@ -13,7 +13,7 @@ export async function fetchProducts(): Promise<AdminProduct[]> {
 
 export interface ProductInput {
   name: string;
-  country: string;
+  team: string;
   price: number;
   sizes: string[];
   description: string | null;

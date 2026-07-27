@@ -109,7 +109,7 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
       </div>
 
       <div className="p-3">
-        <p className="text-[11px] font-extrabold uppercase tracking-wide text-gz-red">{product.country}</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-wide text-gz-red">{product.team}</p>
         <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-base uppercase leading-tight text-gz-navy">
           {product.name}
         </h3>

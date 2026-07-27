@@ -12,7 +12,7 @@ const SPARKLES = [
 
 // A mystery "tier" card. Lives inside the dark Mystery Kits panel: a glassy translucent
 // body with a gradient header holding a floating "?" and sparkles, distinct from the
-// white JerseyCard used in the country grid.
+// white JerseyCard used in the main kit grid.
 export function MysteryCard({ product }: { product: Product }) {
   const soldOut = isSoldOut(product);
   const tagline = mysteryKitDescription();

@@ -53,12 +53,12 @@ export function requireSameOrigin(req: NextRequest): NextResponse | null {
 }
 
 export const ADMIN_COLUMNS =
-  "id, name, country, price, sizes, image_url, in_stock, hidden, is_mystery, description";
+  "id, name, team, price, sizes, image_url, in_stock, hidden, is_mystery, description";
 
 interface Row {
   id: string;
   name: string;
-  country: string;
+  team: string;
   price: number | string;
   sizes: string[] | null;
   image_url: string | null;
@@ -72,7 +72,7 @@ export function toAdminProduct(row: Row): AdminProduct {
   return {
     id: row.id,
     name: row.name,
-    country: row.country,
+    team: row.team,
     price: Number(row.price),
     sizes: row.sizes ?? [],
     imageUrl: row.image_url,
@@ -142,7 +142,7 @@ function parseBoolean(value: unknown): boolean | null {
 }
 
 // Maps a JSON body to a DB-column object. `partial` (PATCH) only includes
-// provided keys; create (POST) requires name/country/price.
+// provided keys; create (POST) requires name/team/price.
 export function parseProductBody(
   body: unknown,
   { partial }: { partial: boolean },
@@ -155,6 +155,15 @@ export function parseProductBody(
 
   const has = (k: string) => Object.prototype.hasOwnProperty.call(b, k);
 
+  // `country` was renamed to `team` in the 2026-07 rebrand. An admin tab left
+  // open across the deploy still posts the old key; without this it would be
+  // silently ignored and every other field saved anyway — a partial write that
+  // looks like a success. Fail loudly instead. Safe to delete once no stale
+  // tabs can plausibly remain.
+  if (has("country") && !has("team")) {
+    return { ok: false, error: "This page is out of date — reload the admin panel and try again" };
+  }
+
   if (has("name")) {
     const name = String(b.name ?? "").trim();
     if (!name) return { ok: false, error: "Name is required" };
@@ -163,13 +172,13 @@ export function parseProductBody(
     }
     row.name = name;
   }
-  if (has("country")) {
-    const country = String(b.country ?? "").trim();
-    if (!country) return { ok: false, error: "Country is required" };
-    if (country.length > PRODUCT_LIMITS.country) {
-      return { ok: false, error: `Country must be ${PRODUCT_LIMITS.country} characters or fewer` };
+  if (has("team")) {
+    const team = String(b.team ?? "").trim();
+    if (!team) return { ok: false, error: "Team is required" };
+    if (team.length > PRODUCT_LIMITS.team) {
+      return { ok: false, error: `Team must be ${PRODUCT_LIMITS.team} characters or fewer` };
     }
-    row.country = country;
+    row.team = team;
   }
   if (has("price")) {
     if (typeof b.price === "string" && b.price.trim() === "") {
@@ -236,7 +245,7 @@ export function parseProductBody(
 
   if (!partial) {
     if (row.name === undefined) return { ok: false, error: "Name is required" };
-    if (row.country === undefined) return { ok: false, error: "Country is required" };
+    if (row.team === undefined) return { ok: false, error: "Team is required" };
     if (row.price === undefined) return { ok: false, error: "Price is required" };
     if (row.sizes === undefined) row.sizes = [];
     if (row.image_url === undefined) row.image_url = null;

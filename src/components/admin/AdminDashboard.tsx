@@ -24,7 +24,7 @@ export function AdminDashboard() {
     const q = query.trim().toLowerCase();
     if (!q) return products;
     return products.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.country.toLowerCase().includes(q),
+      (p) => p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q),
     );
   }, [products, query]);
 

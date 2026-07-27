@@ -90,7 +90,7 @@ export default async function JerseyPage({
                 product.isMystery ? "text-gz-magenta" : "text-gz-red"
               }`}
             >
-              {product.isMystery ? "Mystery Kit" : product.country}
+              {product.isMystery ? "Mystery Kit" : product.team}
             </p>
             <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl uppercase leading-none text-gz-navy sm:text-4xl">
               {product.name}

@@ -2,28 +2,28 @@
 
 import { useMemo, useState } from "react";
 import type { Product } from "@/lib/types";
-import { filterProducts, sortProducts, listCountries, latestArrivals } from "@/lib/catalog";
+import { filterProducts, sortProducts, listTeams, latestArrivals } from "@/lib/catalog";
 import { JerseyCard } from "./JerseyCard";
 
 export function CatalogBrowser({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
-  const [country, setCountry] = useState<string | null>(null);
+  const [team, setTeam] = useState<string | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
 
   const arrivals = useMemo(() => latestArrivals(products, 10), [products]);
-  const countries = useMemo(() => listCountries(products), [products]);
+  const teams = useMemo(() => listTeams(products), [products]);
   const sorted = useMemo(() => sortProducts(products), [products]);
   const visible = useMemo(
-    () => filterProducts(sorted, { query, country, inStockOnly }),
-    [sorted, query, country, inStockOnly],
+    () => filterProducts(sorted, { query, team, inStockOnly }),
+    [sorted, query, team, inStockOnly],
   );
 
-  const selectCountry = (c: string | null) => {
-    setCountry(c);
+  const selectTeam = (t: string | null) => {
+    setTeam(t);
     document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const hasFilters = query !== "" || country !== null || inStockOnly;
+  const hasFilters = query !== "" || team !== null || inStockOnly;
 
   return (
     <div className="mx-auto max-w-6xl px-4">
@@ -49,39 +49,39 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
         </section>
       )}
 
-      {/* Shop by country */}
-      {countries.length > 0 && (
+      {/* Shop by team */}
+      {teams.length > 0 && (
         <section id="countries" className="scroll-mt-24 pt-12">
           <h2 className="font-[family-name:var(--font-display)] text-2xl uppercase text-gz-navy sm:text-3xl">
-            Shop by Country
+            Shop by Team
           </h2>
           <div className="mt-1 h-1 w-16 rounded-full gz-flag-gradient" aria-hidden="true" />
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => selectCountry(null)}
-              aria-pressed={country === null}
+              onClick={() => selectTeam(null)}
+              aria-pressed={team === null}
               className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 ${
-                country === null
+                team === null
                   ? "border-gz-navy bg-gz-navy text-white"
                   : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"
               }`}
             >
               All
             </button>
-            {countries.map((c) => (
+            {teams.map((t) => (
               <button
-                key={c}
+                key={t}
                 type="button"
-                onClick={() => selectCountry(c)}
-                aria-pressed={country === c}
+                onClick={() => selectTeam(t)}
+                aria-pressed={team === t}
                 className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 ${
-                  country === c
+                  team === t
                     ? "border-gz-navy bg-gz-navy text-white"
                     : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"
                 }`}
               >
-                {c}
+                {t}
               </button>
             ))}
           </div>
@@ -91,7 +91,7 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
       {/* Full catalog */}
       <section id="catalog" className="scroll-mt-24 pb-16 pt-12">
         <h2 className="font-[family-name:var(--font-display)] text-2xl uppercase text-gz-navy sm:text-3xl">
-          {country ?? "All"} Kits
+          {team ?? "All"} Kits
         </h2>
         <div className="mt-1 h-1 w-16 rounded-full gz-flag-gradient" aria-hidden="true" />
 
@@ -114,7 +114,7 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search team or country…"
+              placeholder="Search kits or teams…"
               className="w-full rounded-xl border border-gz-border bg-gz-surface py-3 pl-11 pr-4 text-base text-gz-text placeholder:text-gz-muted focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/40"
             />
           </div>
@@ -141,7 +141,7 @@ export function CatalogBrowser({ products }: { products: Product[] }) {
               type="button"
               onClick={() => {
                 setQuery("");
-                setCountry(null);
+                setTeam(null);
                 setInStockOnly(false);
               }}
               className="cursor-pointer font-bold text-gz-red hover:underline"

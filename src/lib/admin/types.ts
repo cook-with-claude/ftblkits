@@ -1,7 +1,7 @@
 export interface AdminProduct {
   id: string;
   name: string;
-  country: string;
+  team: string;
   price: number;
   sizes: string[];
   imageUrl: string | null;
