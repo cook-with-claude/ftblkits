@@ -1,6 +1,13 @@
 # Rebrand Notes — from World Cup store to general replica-jersey reseller
 
-**Status:** planned, not started. Captured 2026-07-26, written up 2026-07-27.
+**Status: phase 1 BUILT on the `rebrand` branch (2026-07-27), not yet deployed.**
+Sections, routing, navigation, the `country`→`team` rename and the admin section
+management are all done — see `docs/session-log.md` for the build and what remains.
+What is still open from this document: the name and logo (deliberately deferred), and
+the palette (deliberately kept). Everything below is the original brief, retained so the
+reasoning behind the build stays legible.
+
+Captured 2026-07-26, written up 2026-07-27.
 **Owner decision:** the business is pivoting. GoalZone is no longer a World-Cup /
 national-team-only store — it becomes a **general replica-jersey reseller** carrying every
 kit type: World Cup, national teams, Champions League, domestic club and league kits.

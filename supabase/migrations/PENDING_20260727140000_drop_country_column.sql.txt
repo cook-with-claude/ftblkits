@@ -1,0 +1,51 @@
+-- ============================================================================
+-- DO NOT RUN YET. This is the CONTRACT half of the country -> team migration.
+--
+-- Deliberately saved as .sql.txt, not .sql, so it is not picked up by anything
+-- that applies the migrations folder in order. Rename it to
+--   20260727140000_drop_country_column.sql
+-- only when the condition below is met.
+--
+-- RUN THIS ONLY WHEN:
+--   1. The rebrand branch is merged and deployed to production, AND
+--   2. https://the-goal-zone-kits.netlify.app/api/health returns 200 with every
+--      check true, AND
+--   3. The storefront and /admin have been used and verified on the live site.
+--
+-- WHY IT IS SEPARATE: 20260727120000 added `team` alongside `country` and kept
+-- them identical with a trigger, so old code (reading `country`) and new code
+-- (reading `team`) both work. That is what let the live shop keep running while
+-- the rebrand was built. Dropping `country` is the point of no return: any
+-- deploy still selecting it breaks immediately, and rollback means restoring
+-- from the snapshot in backups/.
+--
+-- Once this runs, the expand/contract rollback in 20260727120000 no longer
+-- applies -- there is no `country` column to fall back to.
+-- ============================================================================
+
+-- The trigger exists only to keep the two columns in step; with one column gone
+-- it has nothing to do. Drop it before the column so it is never briefly
+-- referencing a column that no longer exists.
+drop trigger if exists products_sync_team_country on public.products;
+drop function if exists public.products_sync_team_country();
+
+alter table public.products drop column if exists country;
+
+-- The old CHECK constraint went with the column, if it had not already been
+-- renamed onto `team` by the expand migration.
+do $$
+begin
+  if exists (select 1 from pg_constraint where conname = 'products_country_nonblank') then
+    alter table public.products drop constraint products_country_nonblank;
+  end if;
+end
+$$;
+
+-- Sanity check after running:
+--   select count(*) from products where team is null or btrim(team) = '';  -- expect 0
+--   select column_name from information_schema.columns
+--    where table_name = 'products' and column_name in ('team','country');   -- expect only 'team'
+--
+-- Then delete the stale-`country`-key guard in parseProductBody
+-- (src/lib/admin/server.ts) and its test -- no admin tab can still be old enough
+-- to need it.

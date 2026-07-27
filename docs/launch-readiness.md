@@ -79,6 +79,18 @@ After Netlify deploys:
   or expose service-role credentials as a workaround.
 - Change `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` immediately if either may have leaked.
 
+## Change log for signed-off copy
+
+Copy in this section was signed off by the owner, so changes to it are recorded rather
+than made silently.
+
+- **2026-07-27 (rebrand branch, not yet deployed):** the footer disclaimer changed from
+  "not affiliated with FIFA or any national federation" to "not affiliated with any club,
+  league or federation". The store now sells club and league kits, so the original wording
+  no longer covered the catalogue. Strictly broader, but it needs owner acknowledgement.
+  The word "replica" is unchanged and still appears in the hero, footer, metadata and
+  mystery-kit copy.
+
 ## Owner sign-off
 
 Before advertising the store, the owner must confirm:

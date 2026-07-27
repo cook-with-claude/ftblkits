@@ -4,6 +4,82 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-07-27 (afternoon) — Rebrand phase 1: real section pages, admin-managed taxonomy
+
+**Participants:** Nadim (owner) + Claude Code (Opus 5)
+**Branch:** `rebrand` (5 commits, **not merged, not deployed**)
+**Outcome:** The storefront is no longer one scrolling page. Sections are real pages you
+click into, they live in the database, and the owner manages them from `/admin`. Name,
+logo and palette deliberately unchanged.
+
+### 1. What changed
+- **`country` → `team`.** One free-text column was doing double duty — the "Shop by
+  Country" chips *and* half the search predicate — and assumed every kit belongs to a
+  nation. `team` holds "Argentina" or "Real Madrid"; the new sections carry the grouping.
+- **`sections` table + `products.sections text[]`.** Slug, label, nav group, sort order,
+  accent, description, hidden. RLS mirrors products: visible rows only, public read.
+- **Routes:** `(storefront)` group with a shared layout, `/kits`, `/kits/[section]`, a
+  group-level 404. Home is a landing page; `CatalogBrowser` and all four anchors are gone.
+- **Nav** is built from the database — featured sections as standalone links, the rest as
+  grouped dropdowns, with active-route highlighting, Escape-to-close, a mobile `<details>`
+  drawer and a skip link.
+- **Admin** gained a Sections tab (create / rename / reorder / recolour / hide / delete
+  with live kit counts) and a section picker on every kit.
+- **World Cup content removed:** the giant "26" watermark, the FIFA/host-nations eyebrow,
+  "Wear the tournament.", the footer's tournament line. Disclaimer broadened from "FIFA or
+  any national federation" to "any club, league or federation".
+
+### 2. Decisions worth remembering
+- **Expand/contract instead of a straight rename.** The approved plan called for a hard
+  `rename column`. That would have taken the *live shop down for the whole build*, not the
+  few minutes the plan assumed, because production still selects `country`. Instead both
+  columns exist and a trigger keeps them identical, so old and new code both work. The
+  contract half is parked at `supabase/migrations/PENDING_…_drop_country_column.sql.txt`,
+  saved as `.sql.txt` so it cannot be applied by accident.
+- **`text[]` of slugs, not a join table.** The admin routes have no transaction layer, so
+  a two-statement save could half-apply. In place of a foreign key: a slug-format CHECK
+  (the slug is both a URL segment and a PostgREST `cs.{}` filter value, so a comma would
+  silently corrupt the query), a write-side existence check, and two SQL functions that do
+  the section change and the product fan-out in one transaction.
+- **Seeded only what is stocked** — 8 countries — plus hidden shells for five leagues,
+  Club Kits, Retro and 25/26. The reference site (goaldenlb.com) lists 50 countries and 30
+  leagues; copying that here would have meant 42 dead nav links and thin pages.
+- **Filters are not routed.** Every page is `force-dynamic`, so `router.replace` per
+  keystroke would be a server round-trip per character. Filters run locally and mirror into
+  the URL via `history.replaceState`.
+
+### 3. Two bugs found while verifying
+- **The root layout set `alternates.canonical: "/"`.** Next merges root metadata into every
+  route, so it was quietly telling search engines that every jersey page — and every
+  section page about to be added — was a duplicate of the homepage. Removed; each page now
+  sets its own. Confirmed in view-source.
+- **All 15 seeded kits share one `created_at`**, so row order (and "New Arrivals") was
+  non-deterministic between requests. Added an `id` tiebreaker.
+- Also: `jersey/[id]/not-found.tsx` rendered `text-white/70` on a white background, left
+  over from the pre-June dark theme. Deleted in favour of the group-level 404.
+
+### 4. Verification
+`npm test` **128 passing** (was 80), `tsc`, `eslint` and `next build` all clean. Against
+the live database: 11 visible sections, hidden ones blocked by RLS, per-section counts
+correct, anon writes rejected (42501), and probes proving the sync trigger works in all
+four directions and that the rename/delete RPCs fan out with no ghost slugs left behind.
+In the browser: dropdowns, Escape, active highlighting, `/kits/nonsense` → 404, hidden
+`/kits/premier-league` → 404, correct canonicals, 15 kits in both `national-teams` and
+`world-cup-2026` (proving multi-membership). Every admin route 401s without a session.
+
+### 5. Open items
+- **Not merged, not deployed.** Deploy, then run the pending contract migration.
+- **Mobile not visually verified** — the browser window would not resize. Needs a check on
+  a real phone: drawer, `<details>` groups, no horizontal overflow.
+- **Admin UI round trip not exercised** — `.env.local` has no service-role key or admin
+  password, and those are the owner's to supply. Needs the create → assign → rename →
+  re-slug → hide → delete walkthrough from the plan.
+- Name and logo unchanged by choice; palette kept by choice.
+- Still open from before: custom domain, analytics, `docs/superpowers/` still Sanity-era,
+  `docs/launch-readiness.md` still says "Conditional GO".
+
+---
+
 ## 2026-07-27 — Catch-up: pushed pending commit, wrote the rebrand + marketing docs
 
 **Participants:** Nadim (owner) + Claude Code (Opus 5)
