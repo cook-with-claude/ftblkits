@@ -10,6 +10,30 @@ export interface CatalogFilter {
   inStockOnly?: boolean;
 }
 
+export interface CatalogFilterLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+// Builds the shareable filter URL without knowing about React or the browser.
+// Unrelated query params and the current fragment are deliberately preserved.
+export function buildCatalogFilterUrl(
+  location: CatalogFilterLocation,
+  filter: CatalogFilter,
+): string {
+  const params = new URLSearchParams(location.search);
+  if (filter.query) params.set("q", filter.query);
+  else params.delete("q");
+  if (filter.team) params.set("team", filter.team);
+  else params.delete("team");
+  if (filter.inStockOnly) params.set("stock", "1");
+  else params.delete("stock");
+
+  const search = params.toString();
+  return `${location.pathname}${search ? `?${search}` : ""}${location.hash}`;
+}
+
 export function filterProducts(products: Product[], filter: CatalogFilter): Product[] {
   const q = filter.query.trim().toLowerCase();
   return products.filter((p) => {

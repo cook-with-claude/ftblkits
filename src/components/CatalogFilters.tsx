@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Product } from "@/lib/types";
-import { filterProducts, sortProducts, listTeams } from "@/lib/catalog";
+import { buildCatalogFilterUrl, filterProducts, sortProducts, listTeams } from "@/lib/catalog";
 import { JerseyCard } from "./JerseyCard";
 
 // Search + team + in-stock filtering over a list the server already scoped
@@ -42,20 +42,22 @@ export function CatalogFilters({
 
   // Debounced so typing does not write to history on every keystroke.
   useEffect(() => {
+    const startLocation = {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash,
+    };
+    const startUrl = `${startLocation.pathname}${startLocation.search}${startLocation.hash}`;
+
     const id = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (query) params.set("q", query);
-      else params.delete("q");
-      if (team) params.set("team", team);
-      else params.delete("team");
-      if (inStockOnly) params.set("stock", "1");
-      else params.delete("stock");
-      const search = params.toString();
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}${search ? `?${search}` : ""}`,
-      );
+      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      // A Link click, back/forward navigation, or another URL update won the
+      // race while this debounce was pending. Never write stale filters onto
+      // that destination.
+      if (currentUrl !== startUrl) return;
+
+      const nextUrl = buildCatalogFilterUrl(startLocation, { query, team, inStockOnly });
+      if (nextUrl !== currentUrl) window.history.replaceState(null, "", nextUrl);
     }, 250);
     return () => clearTimeout(id);
   }, [query, team, inStockOnly]);

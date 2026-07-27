@@ -6,6 +6,7 @@ import {
   listTeams,
   mysteryKits,
   regularKits,
+  buildCatalogFilterUrl,
 } from "@/lib/catalog";
 import { isUuid } from "@/lib/ids";
 import type { Product } from "@/lib/types";
@@ -63,6 +64,28 @@ describe("filterProducts", () => {
     expect(
       filterProducts(more, { query: "away", team: "Argentina" }).map((p) => p.id),
     ).toEqual(["arg2"]);
+  });
+});
+
+describe("buildCatalogFilterUrl", () => {
+  it("updates filters while preserving unrelated params and the fragment", () => {
+    expect(
+      buildCatalogFilterUrl(
+        { pathname: "/kits", search: "?campaign=summer&q=old", hash: "#results" },
+        { query: "Real Madrid", team: "Real Madrid", inStockOnly: true },
+      ),
+    ).toBe(
+      "/kits?campaign=summer&q=Real+Madrid&team=Real+Madrid&stock=1#results",
+    );
+  });
+
+  it("removes cleared filters without leaving a dangling question mark", () => {
+    expect(
+      buildCatalogFilterUrl(
+        { pathname: "/kits/la-liga", search: "?q=real&team=Real+Madrid&stock=1", hash: "" },
+        { query: "", team: null, inStockOnly: false },
+      ),
+    ).toBe("/kits/la-liga");
   });
 });
 
