@@ -12,14 +12,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products =
     catalog.status === "ok" ? catalog.products.filter((product) => product.inStock) : [];
 
-  // getSections only returns visible sections (enforced by RLS), so the empty
-  // league and season shells never enter the sitemap as thin content.
-  const sectionUrls: MetadataRoute.Sitemap = sectionsResult.sections.map((section) => ({
-    url: `${SITE_URL}/kits/${section.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "daily",
-    priority: 0.8,
-  }));
+  // Sections appear in the nav as soon as they are visible, so the shop's shape
+  // is browsable while it is still being stocked. Submitting the empty ones to
+  // search engines is a different matter -- a page with no kits is thin content,
+  // so a section only enters the sitemap once it actually has something in it.
+  // It still gets crawled via the nav; this just stops us asking for indexing.
+  const stockedSlugs = new Set(
+    (catalog.status === "ok" ? catalog.products : []).flatMap((product) => product.sections),
+  );
+
+  const sectionUrls: MetadataRoute.Sitemap = sectionsResult.sections
+    .filter((section) => stockedSlugs.has(section.slug))
+    .map((section) => ({
+      url: `${SITE_URL}/kits/${section.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    }));
 
   const jerseyUrls: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${SITE_URL}/jersey/${product.id}`,

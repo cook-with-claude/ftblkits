@@ -21,28 +21,71 @@ describe("sitemap freshness", () => {
     expect(dynamic).toBe("force-dynamic");
   });
 
-  it("includes the latest visible section routes", async () => {
-    mocks.getAllProducts.mockResolvedValueOnce({ status: "ok", products: [] });
-    mocks.getSections.mockResolvedValueOnce({
+  function section(slug: string) {
+    return {
+      id: `section-${slug}`,
+      slug,
+      label: slug,
+      navGroup: "league",
+      sortOrder: 10,
+      accent: null,
+      description: null,
+      hidden: false,
+    };
+  }
+
+  function product(id: string, sections: string[]) {
+    return {
+      id,
+      name: id,
+      team: "Team",
+      price: 30,
+      sizes: ["M"],
+      imageUrl: null,
+      inStock: true,
+      description: null,
+      isMystery: false,
+      sections,
+    };
+  }
+
+  it("includes the latest visible section routes once they hold kits", async () => {
+    mocks.getAllProducts.mockResolvedValueOnce({
       status: "ok",
-      sections: [
-        {
-          id: "section-1",
-          slug: "la-liga",
-          label: "La Liga",
-          navGroup: "league",
-          sortOrder: 10,
-          accent: null,
-          description: null,
-          hidden: false,
-        },
-      ],
+      products: [product("p1", ["la-liga"])],
     });
+    mocks.getSections.mockResolvedValueOnce({ status: "ok", sections: [section("la-liga")] });
 
     await expect(sitemap()).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ url: "https://goalzone.example/kits/la-liga" }),
       ]),
     );
+  });
+
+  // Sections go live in the nav before they are stocked, so the shop's shape is
+  // browsable while it fills up. An empty one is thin content, so it is kept out
+  // of the sitemap until it has kits -- it is still reachable and crawlable.
+  it("leaves an empty section out until it is stocked", async () => {
+    mocks.getAllProducts.mockResolvedValueOnce({
+      status: "ok",
+      products: [product("p1", ["la-liga"])],
+    });
+    mocks.getSections.mockResolvedValueOnce({
+      status: "ok",
+      sections: [section("la-liga"), section("mls")],
+    });
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls).toContain("https://goalzone.example/kits/la-liga");
+    expect(urls).not.toContain("https://goalzone.example/kits/mls");
+  });
+
+  it("still lists the home and browse-all routes when nothing is stocked", async () => {
+    mocks.getAllProducts.mockResolvedValueOnce({ status: "ok", products: [] });
+    mocks.getSections.mockResolvedValueOnce({ status: "ok", sections: [section("mls")] });
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls).toEqual(["https://goalzone.example", "https://goalzone.example/kits"]);
   });
 });

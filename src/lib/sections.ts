@@ -31,7 +31,7 @@ export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   league: "Shop by League",
   country: "Shop by Country",
   club: "Shop by Club",
-  mystery: "Mystery",
+  mystery: "Mystery Boxes",
 };
 
 // Lowercase, digits, single hyphens between segments. Enforced here and by a
