@@ -11,14 +11,6 @@ const TRUST = [
 export function Hero({ featured }: { featured: Product | null }) {
   return (
     <section className="relative overflow-hidden bg-gz-navy-deep text-white">
-      {/* Giant tournament-year watermark */}
-      <span
-        className="pointer-events-none absolute -top-[10%] right-[-1%] select-none font-[family-name:var(--font-display)] leading-[0.8] text-white/[0.04]"
-        style={{ fontSize: "min(48vw, 600px)" }}
-        aria-hidden="true"
-      >
-        26
-      </span>
       {/* Accent glows */}
       <div className="pointer-events-none absolute -right-20 -top-16 h-80 w-80 rounded-full bg-gz-red/25 blur-[95px]" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 rounded-full bg-gz-green/20 blur-[95px]" aria-hidden="true" />
@@ -28,15 +20,15 @@ export function Hero({ featured }: { featured: Product | null }) {
           {/* Copy */}
           <div>
             <p className="gz-rise text-xs font-extrabold uppercase tracking-[0.22em] text-white/65">
-              FIFA World Cup 2026 · USA · Canada · México
+              Replica football kits · Beirut · Cash on delivery
             </p>
             <h1 className="gz-rise mt-4 font-[family-name:var(--font-display)] text-5xl uppercase leading-[0.9] tracking-wide sm:text-7xl">
-              Wear the
+              Wear your
               <br />
-              tournament<span className="text-gz-red">.</span>
+              colours<span className="text-gz-red">.</span>
             </h1>
             <p className="gz-rise mt-5 max-w-md text-base leading-relaxed text-white/70 sm:text-lg">
-              Replica national-team kits in Beirut. Browse the collection, pick your size,
+              Replica kits from every league, club and country — in Beirut. Pick your size
               and order in seconds on WhatsApp.
             </p>
 
@@ -51,7 +43,7 @@ export function Hero({ featured }: { featured: Product | null }) {
                 href="#countries"
                 className="inline-flex cursor-pointer items-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-colors duration-200 hover:bg-white/10"
               >
-                Shop by country
+                Shop by team
               </Link>
             </div>
 

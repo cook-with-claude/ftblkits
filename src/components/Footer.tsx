@@ -13,7 +13,7 @@ export function Footer() {
           <div className="max-w-sm">
             <Image src="/logo.jpeg" alt="GoalZone" width={200} height={107} className="h-10 w-auto" />
             <p className="mt-3 text-sm leading-relaxed text-gz-body">
-              Replica national-team kits in Beirut, themed for the FIFA World Cup 2026.
+              Replica football kits in Beirut — leagues, clubs, national teams and retro.
               Cash on delivery across Lebanon.
             </p>
           </div>
@@ -48,7 +48,7 @@ export function Footer() {
         </div>
 
         <p className="mt-10 text-xs text-gz-muted">
-          © {new Date().getFullYear()} The Goal Zone. Replica kits — not affiliated with FIFA or any national federation.
+          © {new Date().getFullYear()} The Goal Zone. Replica kits — not affiliated with any club, league or federation.
         </p>
       </div>
     </footer>

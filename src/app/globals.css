@@ -7,7 +7,8 @@
   --gz-surface: #ffffff;
   --gz-border: #e2e8f0;
 
-  /* Brand — World Cup 2026 (USA navy / Canada red / Mexico green) */
+  /* Brand — navy / red / green. Originally picked from the 2026 host nations;
+     kept after the rebrand because it reads as a general football palette. */
   --gz-navy: #1e2a78;
   --gz-navy-deep: #13205c;
   --gz-red: #e10600;
@@ -44,7 +45,7 @@ html, body {
   color: var(--gz-text);
 }
 
-/* Tri-color World Cup motif — hard-edged flag bar (Canada red / USA navy / Mexico green) */
+/* Brand tri-color motif — hard-edged flag bar (red / navy / green) */
 .gz-flagbar {
   background: linear-gradient(
     90deg,

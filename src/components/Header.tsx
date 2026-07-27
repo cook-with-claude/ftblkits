@@ -8,8 +8,8 @@ import { buildWhatsappLink } from "@/lib/whatsapp";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "World Cup Kits", href: "/#catalog" },
-  { label: "Shop by Country", href: "/#countries" },
+  { label: "All Kits", href: "/#catalog" },
+  { label: "Shop by Team", href: "/#countries" },
   { label: "Mystery Kits", href: "/#mystery" },
   { label: "New Arrivals", href: "/#arrivals" },
 ];
@@ -32,7 +32,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 bg-gz-bg/95 backdrop-blur">
-      {/* World Cup tri-color motif */}
+      {/* Brand tri-color motif */}
       <div className="gz-flagbar h-1 w-full" aria-hidden="true" />
 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">

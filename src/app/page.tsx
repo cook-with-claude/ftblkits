@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { MysteryKits } from "@/components/MysteryKits";
@@ -8,6 +9,12 @@ import { mysteryKits, regularKits } from "@/lib/catalog";
 
 // Always read live from Supabase so stock/listing changes appear immediately.
 export const dynamic = "force-dynamic";
+
+// Set per page rather than inherited from the root layout — see the comment in
+// src/app/layout.tsx.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const catalog = await getAllProducts();
