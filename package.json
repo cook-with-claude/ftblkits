@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit:launch": "npm audit --audit-level=moderate"
+    "audit:launch": "node scripts/audit-launch.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",

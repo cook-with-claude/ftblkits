@@ -7,10 +7,23 @@ new Supabase migration and updated Netlify build must be deployed before the cur
 production site receives final approval. Do not treat a successful build alone as a
 production launch.
 
-The dependency gate has no moderate, high, or critical findings. npm currently reports
-one low-severity esbuild advisory limited to the Windows development server; `npm audit
-fix --dry-run` proposes no compatible update. It is not shipped as a production runtime
-dependency and should be revisited when Vite/Vitest publish a compatible patched range.
+The dependency gate (`npm run audit:launch`) passes with **two acknowledged advisories**,
+both recorded with reasoning and a recheck trigger in `scripts/audit-launch.mjs`. The gate
+still fails on anything else at moderate or above — verified 2026-07-27 by removing an
+entry and confirming a non-zero exit — so this is an exception list, not a lowered bar.
+
+- **`sharp` (high, GHSA-f88m-g3jw-g9cj)** — libvips CVEs inherited through `next`'s
+  image-optimisation dependency. npm's only offered fix is `next@14.2.35`, two majors back,
+  which would undo the App Router the app is built on. Exposure is limited: images are
+  admin-uploaded only, content-sniffed in `src/lib/admin/image.ts`, and served from a single
+  allow-listed Supabase bucket. **Remove the exception when `next` depends on sharp ≥ 0.35.0.**
+- **`brace-expansion` (high, GHSA-mh99-v99m-4gvg)** — ReDoS reachable only via eslint's
+  minimatch chain, a devDependency that never runs in production. Overriding to the patched
+  5.0.8 was tried and breaks eslint outright (minimatch 3.x calls an API that major removed).
+
+A low-severity esbuild advisory also remains, limited to the development server. It is below
+the gate's threshold and is not a production runtime dependency; revisit when Vite/Vitest
+publish a compatible patched range.
 
 ## Required production configuration
 
