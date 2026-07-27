@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SocialLinks } from "@/components/SocialLinks";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { sectionHref, type Section } from "@/lib/sections";
@@ -55,28 +56,17 @@ export function Footer({ sections = [] }: { sections?: Section[] }) {
             >
               Order on WhatsApp
             </a>
-            <a
-              href="https://www.instagram.com/goalzone961/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
-            >
-              Instagram
-            </a>
-            <a
-              href="https://www.tiktok.com/@goalzone961"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
-            >
-              TikTok
-            </a>
           </div>
         </div>
 
-        <p className="mt-10 text-xs text-gz-muted">
-          © {new Date().getFullYear()} The Goal Zone. Replica kits — not affiliated with any club, league or federation.
-        </p>
+        {/* col-reverse on mobile lifts the icons (last in the DOM) above the
+            fine print; sm: puts them back on the right of the same row. */}
+        <div className="mt-10 flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-gz-muted">
+            © {new Date().getFullYear()} The Goal Zone. Replica kits — not affiliated with any club, league or federation.
+          </p>
+          <SocialLinks />
+        </div>
       </div>
     </footer>
   );
