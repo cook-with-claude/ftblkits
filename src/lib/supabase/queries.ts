@@ -207,8 +207,14 @@ export async function getLatestProducts(limit = 10): Promise<CatalogResult> {
 
 export async function checkCatalogConnection(): Promise<boolean> {
   try {
-    const { error } = await supabase.from("products").select("id").limit(1);
-    return !error;
+    // Sections now power every storefront nav and all /kits/[section] routes.
+    // A products-only probe could report healthy while the taxonomy table was
+    // inaccessible (for example, because its Data API grant was missing).
+    const [products, sections] = await Promise.all([
+      supabase.from("products").select("id").limit(1),
+      supabase.from("sections").select("id").limit(1),
+    ]);
+    return !products.error && !sections.error;
   } catch {
     return false;
   }

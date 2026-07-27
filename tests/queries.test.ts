@@ -12,6 +12,7 @@ import {
   getSections,
   getSectionBySlug,
   getProductsInSection,
+  checkCatalogConnection,
 } from "@/lib/supabase/queries";
 
 function builder(result: { data: unknown; error: unknown }) {
@@ -127,5 +128,21 @@ describe("section query outcomes", () => {
   it("treats a malformed section slug as empty, not an outage", async () => {
     await expect(getProductsInSection("La Liga")).resolves.toEqual({ status: "ok", products: [] });
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("catalog health probe", () => {
+  it("requires both products and sections to be reachable", async () => {
+    mocks.from
+      .mockReturnValueOnce(builder({ data: [], error: null }))
+      .mockReturnValueOnce(builder({ data: [], error: null }));
+    await expect(checkCatalogConnection()).resolves.toBe(true);
+    expect(mocks.from).toHaveBeenNthCalledWith(1, "products");
+    expect(mocks.from).toHaveBeenNthCalledWith(2, "sections");
+
+    mocks.from
+      .mockReturnValueOnce(builder({ data: [], error: null }))
+      .mockReturnValueOnce(builder({ data: null, error: { message: "permission denied" } }));
+    await expect(checkCatalogConnection()).resolves.toBe(false);
   });
 });
