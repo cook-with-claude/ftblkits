@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { AdminProduct } from "@/lib/admin/types";
+import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 import { createProduct, discardUploadedImage, uploadImage } from "./api";
 import { PRODUCT_LIMITS } from "@/lib/admin/validation";
+import { SectionPicker } from "./SectionPicker";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -12,11 +13,18 @@ const labelClass = "block text-[11px] font-extrabold uppercase tracking-widest t
 
 const EMPTY = { name: "", team: "", price: "", sizes: "", description: "" };
 
-export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void }) {
+export function AddKitForm({
+  onCreated,
+  sections = [],
+}: {
+  onCreated: (p: AdminProduct) => void;
+  sections?: AdminSection[];
+}) {
   const [open, setOpen] = useState(false);
   const [f, setF] = useState(EMPTY);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isMystery, setIsMystery] = useState(false);
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [busy, setBusy] = useState<null | "upload" | "create" | "cleanup">(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,11 +81,13 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
         inStock: true,
         hidden: false,
         isMystery,
+        sections: selectedSections,
       });
       onCreated(created);
       setF(EMPTY);
       setImageUrl(null);
       setIsMystery(false);
+      setSelectedSections([]);
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add kit");
@@ -141,6 +151,15 @@ export function AddKitForm({ onCreated }: { onCreated: (p: AdminProduct) => void
           Mystery kit
         </label>
       </div>
+      {sections.length > 0 && (
+        <div className="mt-4 border-t border-gz-border pt-4">
+          <SectionPicker
+            sections={sections}
+            selected={selectedSections}
+            onChange={setSelectedSections}
+          />
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3">
           {imageUrl && (

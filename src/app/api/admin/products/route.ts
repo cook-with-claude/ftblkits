@@ -7,6 +7,7 @@ import {
   requireSameOrigin,
   toAdminProduct,
 } from "@/lib/admin/server";
+import { unknownSectionsError } from "@/lib/admin/sections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,12 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const supabase = getAdminClient();
+
+  // The parser only validates slug *format*; existence needs a query, which is
+  // why it lives here and not in the pure parser.
+  const sectionError = await unknownSectionsError(supabase, parsed.row.sections);
+  if (sectionError) return NextResponse.json({ error: sectionError }, { status: 400 });
+
   const { data, error } = await supabase
     .from("products")
     .insert(parsed.row)

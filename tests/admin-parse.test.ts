@@ -77,6 +77,42 @@ describe("parseProductBody — create (partial: false)", () => {
     expect(r.country).toBeUndefined();
   });
 
+  describe("sections", () => {
+    it("defaults to an empty array on create", () => {
+      expect(row(valid, false).sections).toEqual([]);
+    });
+
+    it("accepts an array of slugs and deduplicates", () => {
+      expect(row({ ...valid, sections: ["la-liga", "la-liga", " serie-a "] }, false).sections).toEqual([
+        "la-liga",
+        "serie-a",
+      ]);
+    });
+
+    it("accepts a comma-separated string, matching how sizes are handled", () => {
+      expect(row({ ...valid, sections: "la-liga, serie-a" }, false).sections).toEqual([
+        "la-liga",
+        "serie-a",
+      ]);
+    });
+
+    it("rejects slugs that would corrupt the section query or a URL", () => {
+      for (const bad of ["La Liga", "la,liga", "{la-liga}", "la--liga", "la/liga"]) {
+        const res = parseProductBody({ ...valid, sections: [bad] }, { partial: false });
+        expect(res.ok, bad).toBe(false);
+      }
+    });
+
+    it("caps how many sections one kit can be in", () => {
+      const many = Array.from({ length: PRODUCT_LIMITS.sections + 1 }, (_, i) => `section-${i}`);
+      expect(parseProductBody({ ...valid, sections: many }, { partial: false }).ok).toBe(false);
+    });
+
+    it("allows clearing every section on a patch", () => {
+      expect(row({ sections: [] }, true).sections).toEqual([]);
+    });
+  });
+
   it("rejects a negative price", () => {
     const res = parseProductBody({ ...valid, price: -5 }, { partial: false });
     expect(res.ok).toBe(false);

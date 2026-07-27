@@ -3,6 +3,8 @@ import { ADMIN_COOKIE, verifySessionToken } from "./auth";
 import { SITE_URL } from "@/lib/config";
 import type { AdminProduct } from "./types";
 import { PRODUCT_LIMITS } from "./validation";
+import { hasKey, parseBoolean } from "./parse";
+import { isValidSectionSlug } from "@/lib/sections";
 export { PRODUCT_LIMITS } from "./validation";
 
 // Returns a 401 response if the request lacks a valid admin session, else null.
@@ -133,14 +135,27 @@ export function validatePublishableProduct(row: Record<string, unknown>): string
   return null;
 }
 
-function parseBoolean(value: unknown): boolean | null {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true") return true;
-    if (normalized === "false") return false;
+// Deduplicated, trimmed, validated section slugs. Same shape as coerceSizes.
+function coerceSlugs(v: unknown): { ok: true; slugs: string[] } | { ok: false; error: string } {
+  const parts = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
+  const seen = new Set<string>();
+  const slugs: string[] = [];
+
+  for (const raw of parts) {
+    const slug = String(raw).trim();
+    if (!slug) continue;
+    if (!isValidSectionSlug(slug)) {
+      return { ok: false, error: `"${slug}" is not a valid section` };
+    }
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    slugs.push(slug);
   }
-  return null;
+
+  if (slugs.length > PRODUCT_LIMITS.sections) {
+    return { ok: false, error: `Use no more than ${PRODUCT_LIMITS.sections} sections` };
+  }
+  return { ok: true, slugs };
 }
 
 // Maps a JSON body to a DB-column object. `partial` (PATCH) only includes
@@ -155,7 +170,7 @@ export function parseProductBody(
   const b = body as Record<string, unknown>;
   const row: Record<string, unknown> = {};
 
-  const has = (k: string) => Object.prototype.hasOwnProperty.call(b, k);
+  const has = (k: string) => hasKey(b, k);
 
   // `country` was renamed to `team` in the 2026-07 rebrand. An admin tab left
   // open across the deploy still posts the old key; without this it would be
@@ -244,6 +259,13 @@ export function parseProductBody(
     if (parsed === null) return { ok: false, error: "Mystery kit must be true or false" };
     row.is_mystery = parsed;
   }
+  if (has("sections")) {
+    // Format only. Whether each slug refers to a real section is checked in the
+    // route handler, which can query -- this stays synchronous and unit-testable.
+    const parsed = coerceSlugs(b.sections);
+    if (!parsed.ok) return { ok: false, error: parsed.error };
+    row.sections = parsed.slugs;
+  }
 
   if (!partial) {
     if (row.name === undefined) return { ok: false, error: "Name is required" };
@@ -254,6 +276,7 @@ export function parseProductBody(
     if (row.in_stock === undefined) row.in_stock = true;
     if (row.hidden === undefined) row.hidden = false;
     if (row.is_mystery === undefined) row.is_mystery = false;
+    if (row.sections === undefined) row.sections = [];
   }
 
   if (Object.keys(row).length === 0) return { ok: false, error: "Nothing to update" };

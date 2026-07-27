@@ -9,6 +9,7 @@ import {
   toAdminProduct,
   validatePublishableProduct,
 } from "@/lib/admin/server";
+import { unknownSectionsError } from "@/lib/admin/sections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +47,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const nextState = { ...(current as Record<string, unknown>), ...parsed.row };
   const publishError = validatePublishableProduct(nextState);
   if (publishError) return NextResponse.json({ error: publishError }, { status: 400 });
+
+  const sectionError = await unknownSectionsError(supabase, parsed.row.sections);
+  if (sectionError) return NextResponse.json({ error: sectionError }, { status: 400 });
 
   const { data, error } = await supabase
     .from("products")

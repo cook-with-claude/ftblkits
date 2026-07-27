@@ -22,9 +22,11 @@ export function isNavGroup(value: unknown): value is NavGroup {
   return typeof value === "string" && (NAV_GROUPS as readonly string[]).includes(value);
 }
 
-// `featured` is intentionally absent: those render as standalone top-level links,
-// not as a labelled dropdown.
-export const NAV_GROUP_LABELS: Record<Exclude<NavGroup, "featured">, string> = {
+// Every group has a label so admin UIs can name them all. The storefront header
+// deliberately ignores the `featured` one — those render as standalone top-level
+// links rather than as a labelled dropdown (see groupSections).
+export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
+  featured: "Featured",
   type: "Browse",
   league: "Shop by League",
   country: "Shop by Country",
