@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { CartPanel } from "@/components/cart/CartPanel";
 import { getSections } from "@/lib/supabase/queries";
 
 export async function StorefrontShell({ children }: { children: ReactNode }) {
@@ -21,6 +22,10 @@ export async function StorefrontShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <Footer sections={result.sections} />
+      {/* Deliberately a sibling of <Header>, not a child: the header's
+          backdrop-blur creates a containing block that would clip this
+          fixed-position overlay to the header's own box. */}
+      <CartPanel />
     </>
   );
 }

@@ -7,11 +7,24 @@ import { usePathname } from "next/navigation";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { groupSections, sectionHref, type Section } from "@/lib/sections";
+import { cartCount } from "@/lib/cart";
+import { CART_TRIGGER_ATTR, openCart, useCart } from "./cart/useCart";
 
 const waLink = buildWhatsappLink(
   WHATSAPP_NUMBER,
   "Hi GoalZone! I have a question about your kits.",
 );
+
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
+      <path d="M6 6h15l-1.5 9h-12z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 6L5 3H2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+    </svg>
+  );
+}
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -40,6 +53,12 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // The panel itself is rendered by StorefrontShell, outside this header: the
+  // header's backdrop-blur would otherwise clip a fixed-position overlay to its
+  // own box. This button just raises the open event.
+  const { lines } = useCart();
+  const count = cartCount(lines);
 
   const groups = groupSections(sections);
   const featured = groups.find((g) => g.group === "featured")?.sections ?? [];
@@ -195,6 +214,27 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Always visible, unlike the WhatsApp button: on a phone this is the
+              only way back to the cart. */}
+          <button
+            {...{ [CART_TRIGGER_ATTR]: "" }}
+            type="button"
+            onClick={openCart}
+            aria-haspopup="dialog"
+            aria-label={count > 0 ? `Open cart, ${count} ${count === 1 ? "kit" : "kits"}` : "Open cart, empty"}
+            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+          >
+            <CartIcon className="h-5 w-5" />
+            {count > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gz-red px-1 text-[11px] font-extrabold text-white"
+              >
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
+          </button>
+
           <a
             href={waLink}
             target="_blank"
