@@ -35,11 +35,6 @@ export function listTeams(products: Product[]): string[] {
   );
 }
 
-// Newest first (DB already returns in that order); used for the arrivals rail.
-export function latestArrivals(products: Product[], limit = 10): Product[] {
-  return products.slice(0, limit);
-}
-
 // Mystery "tier" listings (surprise kits chosen at fulfillment) — shown in their own
 // section, never mixed into the main kit grid, arrivals rail, or search.
 export function mysteryKits(products: Product[]): Product[] {

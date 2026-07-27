@@ -4,7 +4,6 @@ import {
   filterProducts,
   sortProducts,
   listTeams,
-  latestArrivals,
   mysteryKits,
   regularKits,
 } from "@/lib/catalog";
@@ -85,17 +84,6 @@ describe("listTeams", () => {
       make({ id: "2", name: "Mystery Kit", team: "Mystery Kit", isMystery: true }),
     ];
     expect(listTeams(list)).toEqual(["France"]);
-  });
-});
-
-describe("latestArrivals", () => {
-  it("returns the first N products in incoming (newest-first) order", () => {
-    const list = [make({ id: "a" }), make({ id: "b" }), make({ id: "c" })];
-    expect(latestArrivals(list, 2).map((p) => p.id)).toEqual(["a", "b"]);
-  });
-  it("returns all products when fewer than the limit", () => {
-    const list = [make({ id: "a" })];
-    expect(latestArrivals(list, 5).map((p) => p.id)).toEqual(["a"]);
   });
 });
 

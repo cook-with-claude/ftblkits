@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
+import { sectionHref, type Section } from "@/lib/sections";
 
 const TRUST = [
   { label: "Cash on delivery", color: "bg-gz-green" },
@@ -8,7 +9,17 @@ const TRUST = [
   { label: "WhatsApp support", color: "bg-gz-whatsapp" },
 ];
 
-export function Hero({ featured }: { featured: Product | null }) {
+export function Hero({
+  featured,
+  sections = [],
+}: {
+  featured: Product | null;
+  sections?: Section[];
+}) {
+  // Point the secondary CTA at the first featured section if there is one, so
+  // the hero always sends people somewhere real rather than to an anchor.
+  const spotlight = sections.find((s) => s.navGroup === "featured");
+
   return (
     <section className="relative overflow-hidden bg-gz-navy-deep text-white">
       {/* Accent glows */}
@@ -34,17 +45,19 @@ export function Hero({ featured }: { featured: Product | null }) {
 
             <div className="gz-rise mt-8 flex flex-wrap gap-3">
               <Link
-                href="#catalog"
+                href="/kits"
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gz-red px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-12px_rgba(225,6,0,0.7)]"
               >
                 Shop the kits →
               </Link>
-              <Link
-                href="#countries"
-                className="inline-flex cursor-pointer items-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-colors duration-200 hover:bg-white/10"
-              >
-                Shop by team
-              </Link>
+              {spotlight && (
+                <Link
+                  href={sectionHref(spotlight.slug)}
+                  className="inline-flex cursor-pointer items-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-colors duration-200 hover:bg-white/10"
+                >
+                  {spotlight.label}
+                </Link>
+              )}
             </div>
 
             <div className="gz-rise mt-8 flex flex-wrap gap-x-6 gap-y-3.5">
