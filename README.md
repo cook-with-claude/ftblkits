@@ -16,8 +16,8 @@ Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · Supabase (Postgres) ·
 | `/jersey/[id]` | Kit detail + size picker + WhatsApp order |
 | `/admin` | Manage kits and sections |
 
-Storefront pages live in the `(storefront)` route group, which fetches the section list
-once and renders the shared header and footer. `/admin` and `/api` sit outside it.
+Storefront pages live in the `(storefront)` route group, whose layout fetches the section
+list for the shared header and footer. `/admin` and `/api` sit outside it.
 
 Every page sets its own `alternates.canonical`. The root layout deliberately does **not**,
 because Next merges root metadata into every route — a canonical there would tell search
@@ -59,10 +59,11 @@ The shop's navigation, editable from `/admin` with no deploy.
 
 Membership is `products.sections` (an array of slugs, GIN-indexed) rather than a join
 table: the admin routes have no transaction layer, so a two-statement save could
-half-apply. In place of a foreign key there is a slug-format CHECK, a write-side existence
-check in the products route, and two SQL functions —`admin_delete_section` and
-`admin_rename_section_slug` — that do the section change and the fan-out across products in
-one transaction.
+half-apply. In place of a foreign key there is a slug-format CHECK, an application-side
+existence check, a database trigger that rejects invalid/dangling/duplicate memberships
+while locking the referenced section rows, and section triggers that fan every rename or
+delete out across products in the same transaction. The admin RPCs address sections by
+stable UUID and are executable only by the service role.
 
 Kit photos live in a public Supabase Storage bucket named **`kits`** (public-read only).
 Image URLs follow `…/storage/v1/object/public/kits/<file>.jpg`.
@@ -133,8 +134,8 @@ an emergency-only option for the project owner.
 ## Docs
 - [`docs/launch-readiness.md`](docs/launch-readiness.md) — read before every production launch.
 - [`docs/session-log.md`](docs/session-log.md) — running history of work sessions, newest first.
-- [`docs/rebrand-notes.md`](docs/rebrand-notes.md) — planned pivot from World-Cup-only to a
-  general replica-jersey reseller (taxonomy, navigation, branding). Not started.
+- [`docs/rebrand-notes.md`](docs/rebrand-notes.md) — original phase-1 brief for the now-built
+  pivot from World-Cup-only to a general replica-jersey reseller.
 - [`docs/plans/2026-07-26-referral-and-salespeople.md`](docs/plans/2026-07-26-referral-and-salespeople.md)
   — designed-but-unbuilt referral loop and salesperson attribution. Not started.
 
