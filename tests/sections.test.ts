@@ -5,6 +5,7 @@ import {
   groupSections,
   sectionAccent,
   sectionHref,
+  renameSectionMembership,
   isNavGroup,
   isValidAccent,
   NAV_GROUPS,
@@ -121,6 +122,25 @@ describe("sectionAccent / sectionHref", () => {
 
   it("builds the section route", () => {
     expect(sectionHref("la-liga")).toBe("/kits/la-liga");
+  });
+});
+
+describe("renameSectionMembership", () => {
+  it("mirrors a slug rename into loaded product memberships", () => {
+    expect(
+      renameSectionMembership(
+        ["club-kits", "premier-league", "featured"],
+        "premier-league",
+        "english-premier-league",
+      ),
+    ).toEqual(["club-kits", "english-premier-league", "featured"]);
+  });
+
+  it("deduplicates a replacement and preserves unchanged array identity", () => {
+    expect(renameSectionMembership(["old", "new"], "old", "new")).toEqual(["new"]);
+
+    const untouched = ["la-liga"];
+    expect(renameSectionMembership(untouched, "serie-a", "italy-serie-a")).toBe(untouched);
   });
 });
 

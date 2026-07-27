@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminProduct, AdminSection } from "@/lib/admin/types";
+import { renameSectionMembership } from "@/lib/sections";
 import { fetchProducts, fetchSections } from "./api";
 import { KitCard } from "./KitCard";
 import { AddKitForm } from "./AddKitForm";
@@ -59,7 +60,25 @@ export function AdminDashboard() {
   }
 
   function upsertSection(updated: AdminSection) {
+    const previous = sections?.find((section) => section.id === updated.id);
     setSections((prev) => (prev ? prev.map((s) => (s.id === updated.id ? updated : s)) : prev));
+    // The rename RPC updates product arrays in the database. Keep this loaded
+    // dashboard snapshot in step too; otherwise returning to the Kits tab shows
+    // the old slug as "Unknown" and the next kit save is rejected.
+    if (previous && previous.slug !== updated.slug) {
+      setProducts((prev) =>
+        prev
+          ? prev.map((product) => {
+              const next = renameSectionMembership(
+                product.sections,
+                previous.slug,
+                updated.slug,
+              );
+              return next === product.sections ? product : { ...product, sections: next };
+            })
+          : prev,
+      );
+    }
   }
   function addSection(created: AdminSection) {
     setSections((prev) => (prev ? [...prev, created] : [created]));

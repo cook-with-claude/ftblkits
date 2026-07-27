@@ -77,6 +77,17 @@ export function sectionHref(slug: string): string {
   return `/kits/${slug}`;
 }
 
+// Mirrors the database rename fan-out for client state in /admin. Returning the
+// original array when nothing changes avoids needless product-card updates.
+export function renameSectionMembership(
+  slugs: string[],
+  oldSlug: string,
+  newSlug: string,
+): string[] {
+  if (oldSlug === newSlug || !slugs.includes(oldSlug)) return slugs;
+  return [...new Set(slugs.map((slug) => (slug === oldSlug ? newSlug : slug)))];
+}
+
 export interface NavGroupModel {
   group: NavGroup;
   label: string | null; // null for `featured` — rendered as standalone links
