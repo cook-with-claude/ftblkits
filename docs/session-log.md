@@ -4,6 +4,136 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-07-27 — Catch-up: pushed pending commit, wrote the rebrand + marketing docs
+
+**Participants:** Nadim (owner) + Claude Code (Opus 5)
+**Branch:** `master`
+**Outcome:** Cleared the loose ends left over from mid-July. Pushed the one unpushed commit,
+brought this log current (it had gone stale on 06-15, missing the entire admin ship and hardening
+pass), and finally wrote the rebrand notes the owner asked for on 07-26.
+
+### 1. State check
+Production healthy: `/api/health` 200 with every check true. DB has 16 rows — 15 visible kits,
+1 mystery tier, 0 hidden, 0 sold out. `npm test` → **80/80**. Working tree clean.
+
+### 2. Pushed the backlog commit
+`master` was **1 commit ahead of `origin/master`**: `3346942` (remove dead Pro Mystery Kit tier,
+committed 07-14) had never been pushed. Pushed `c35375f..3346942`. Purely dead-code removal, so
+no production behavior changed — the Pro row had already been deleted from the DB.
+
+### 3. Recovered the 07-26 planning work
+The owner remembered writing Markdown notes about a rebrand and some marketing ideas, but no such
+files existed in the repo. They were found in the **plan file**
+`~/.claude/plans/read-project-and-analyse-hidden-eagle.md` — outside the repo, so invisible to it.
+The 07-26 session had explicitly noted "create `docs/rebrand-notes.md` in the repo" as its first
+next step, and that step was never run. Both are now in the repo:
+- **`docs/rebrand-notes.md`** (new) — the full rebrand brief, with every "national-team" string
+  and World-Cup-specific asset located and verified against the current code.
+- **`docs/plans/2026-07-26-referral-and-salespeople.md`** (new) — the referral + salesperson plan,
+  copied in verbatim minus the rebrand section (now cross-linked instead) and with its resume
+  pointer repointed at the in-repo path.
+
+### 4. Open items
+- **Both plans are designed, not started.** No referral/salesperson code, tables, or migrations exist.
+- `docs/superpowers/specs` and `plans/` still describe the **Sanity** architecture abandoned on 06-09.
+- `docs/launch-readiness.md` still reads **"Conditional GO"**; the owner sign-off block is unconfirmed.
+- Still on the `the-goal-zone-kits.netlify.app` subdomain; no custom domain, no analytics.
+
+---
+
+## 2026-07-26 — Planned the referral loop + salesperson attribution (design only, no code)
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master` (nothing committed — plan-mode session)
+**Outcome:** Two marketing features designed end-to-end and written up. **No code was written.**
+The plan now lives at `docs/plans/2026-07-26-referral-and-salespeople.md`.
+
+### 1. What was designed
+- **Part A — customer referral loop.** Double-sided 10% off: the referred friend gets 10% off their
+  first order, the referrer gets 10% off their next once the friend's order is confirmed paid.
+  Internal **$10 cap per order**, deliberately never shown in public copy or WhatsApp text.
+- **Part B — salesperson attribution.** The owner hired 4 salespeople paid a flat **$2 per kit**.
+  Each gets a personal link so sales are attributed automatically. Pure attribution — no customer
+  discount on these links.
+
+### 2. The shaping constraint
+The store has **no checkout, no orders table, no customer accounts**; every sale closes by hand in
+WhatsApp. So there is no way to auto-detect a sale, and an automated reward loop would invite
+self-referral fraud. The design is therefore a **code + admin-operated tracker**: only the link
+capture and the WhatsApp message line are automated; every money event stays owner-confirmed.
+
+### 3. Shared mechanism
+Both features ride the same plumbing — `link → cookie → line in the WhatsApp order` — under
+**separate namespaces** so they never collide: referral is `?ref=` → `gz_ref` cookie (shows a
+10%-off banner); salesperson is `?s=` → `gz_src` cookie (no banner). Both lines can appear in one
+order. Parts A and B can also ship independently.
+
+### 4. Rebrand raised
+The owner flagged the coming pivot away from World-Cup-only, including a move from the single
+scrolling page to real multi-section navigation. Captured as a note in the plan — and, as of
+07-27, written up properly in `docs/rebrand-notes.md`.
+
+### 5. Decisions recorded as deliberate, not oversights
+Salespeople share the single existing `/admin` password; per-rep logins are out of scope until
+there is a real staff identity layer. Customer accounts, notifications, and on-site total math
+remain out of scope.
+
+---
+
+## 2026-07-14 — Removed the Pro Mystery Kit tier
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`
+**Outcome:** The premium "Pro Mystery Kit" tier was dropped from the store. The product row was
+deleted from Supabase, then the code paths that special-cased it were cleaned up (`3346942`).
+
+Removed the `/\bpro\b/i` name test, the premium description branch in `src/lib/mystery.ts`, the
+"Most popular" badge, and the `popular` prop threaded through `MysteryKits` → `MysteryCard`.
+`mysteryKitDescription()` now takes no argument and returns its single line of copy.
+
+**Note:** this commit sat unpushed until 2026-07-27.
+
+---
+
+## 2026-07-11 — Admin panel shipped + pre-launch hardening
+
+**Participants:** Nadim (owner) + Claude Code (Opus 4.8)
+**Branch:** `master`, plus PR #1 from `hardening/pre-launch`
+**Outcome:** The `/admin` panel — parked on disk since 06-13 — was finally committed and deployed,
+then immediately hardened for production. This was the biggest security session on the project.
+
+### 1. Admin panel shipped (`3000cb5`)
+Shared-password admin at `/admin` with an HMAC-signed session cookie, a service-role Supabase
+client, product CRUD API routes, and image upload to the `kits` bucket. Add/edit/delete with
+in-stock, hidden, and mystery-kit toggles. Edge proxy guard evicts stale session cookies; the
+cookie name lives in a crypto-free constants module so `node:crypto` stays out of the Edge bundle.
+CI workflow added (lint + test + build on push/PR).
+
+### 2. Hardening pass (`c08daf7`, PR #1)
+- Next.js upgraded to **16.2.10**; cleared all moderate/high/critical advisories.
+- Admin: sessions bound to secret+password, constant-time password compare, same-origin 403
+  enforcement, bounded in-memory login throttling, plus a Netlify edge rate limiter.
+- Uploads validated **by content** (not extension), random UUID filenames, image-host allowlist.
+- Product validation: decimal-safe prices, field limits, publish gating.
+- Security headers: CSP, `X-Frame-Options: DENY`, nosniff, COOP, Permissions-Policy.
+- Next image hosts restricted to the Supabase `kits` bucket.
+- Added `/api/health`, `robots.txt`, canonical metadata, an error boundary.
+- Migration `20260711160855_launch_hardening.sql`: RLS + non-destructive constraints.
+- Tests expanded **50 → 75**. `docs/launch-readiness.md` written.
+
+### 3. Follow-up fixes the same day
+- `8751946` — the same-origin check rejected legitimate requests behind the Netlify proxy; made it
+  proxy-aware.
+- `b948265` — the visible-listing image constraint blocked mystery kits, which legitimately have no
+  photo. Exempted them in the migration.
+- `c35375f` — the publish gate blocked editing *visible* mystery kits; moved the check to app level.
+
+### 4. Deployment gotcha (worth remembering)
+Several redeploys were needed to pick up admin env vars. Netlify env vars marked **`is_secret`
+do not reach the Next.js function at runtime** — they must be set as non-secret vars.
+
+---
+
 ## 2026-06-15 — Mystery Kits feature + quantity selector + WhatsApp message trim
 
 **Participants:** Nadim (owner) + Claude Code (Opus 4.8)

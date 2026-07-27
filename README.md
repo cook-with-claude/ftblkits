@@ -66,4 +66,13 @@ an emergency-only option for the project owner.
 - **Change the WhatsApp number:** update `NEXT_PUBLIC_WHATSAPP_NUMBER` in Netlify env vars
   and redeploy (it rarely changes).
 
-See [`docs/launch-readiness.md`](docs/launch-readiness.md) before every production launch.
+## Docs
+- [`docs/launch-readiness.md`](docs/launch-readiness.md) — read before every production launch.
+- [`docs/session-log.md`](docs/session-log.md) — running history of work sessions, newest first.
+- [`docs/rebrand-notes.md`](docs/rebrand-notes.md) — planned pivot from World-Cup-only to a
+  general replica-jersey reseller (taxonomy, navigation, branding). Not started.
+- [`docs/plans/2026-07-26-referral-and-salespeople.md`](docs/plans/2026-07-26-referral-and-salespeople.md)
+  — designed-but-unbuilt referral loop and salesperson attribution. Not started.
+
+> `docs/superpowers/` holds the original 2026-06-09 spec and plan. They describe an abandoned
+> **Sanity** architecture and are kept for history only — they do not reflect the current build.
