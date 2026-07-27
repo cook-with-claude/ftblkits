@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/config";
 import { getAllProducts, getSections } from "@/lib/supabase/queries";
 
+// Metadata route handlers are cached by default. The URLs are admin-managed, so
+// regenerate this route on request just like the storefront pages.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [catalog, sectionsResult] = await Promise.all([getAllProducts(), getSections()]);
 
