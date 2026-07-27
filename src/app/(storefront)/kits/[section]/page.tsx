@@ -78,7 +78,7 @@ export default async function SectionPage({
       {mystery.length > 0 && (
         <div className="mt-8 grid gap-4 rounded-[20px] bg-gradient-to-br from-gz-navy-deep via-gz-navy to-[#3a1450] p-5 sm:grid-cols-2 lg:grid-cols-3">
           {mystery.map((kit) => (
-            <MysteryCard key={kit.id} product={kit} />
+            <MysteryCard key={kit.id} product={kit} headingLevel="h2" />
           ))}
         </div>
       )}

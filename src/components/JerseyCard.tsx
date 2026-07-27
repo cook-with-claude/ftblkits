@@ -36,9 +36,18 @@ function subscribeWishlist(onChange: () => void): () => void {
   };
 }
 
-export function JerseyCard({ product, badge }: { product: Product; badge?: "new" }) {
+export function JerseyCard({
+  product,
+  badge,
+  headingLevel = "h3",
+}: {
+  product: Product;
+  badge?: "new";
+  headingLevel?: "h2" | "h3";
+}) {
   const soldOut = isSoldOut(product);
   const kind = kitKind(product.name);
+  const Heading = headingLevel;
 
   // localStorage-backed wishlist state; server snapshot is always false, so there is
   // no hydration mismatch and the heart fills in on the client.
@@ -110,9 +119,9 @@ export function JerseyCard({ product, badge }: { product: Product; badge?: "new"
 
       <div className="p-3">
         <p className="text-[11px] font-extrabold uppercase tracking-wide text-gz-red">{product.team}</p>
-        <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-base uppercase leading-tight text-gz-navy">
+        <Heading className="mt-0.5 font-[family-name:var(--font-display)] text-base uppercase leading-tight text-gz-navy">
           {product.name}
-        </h3>
+        </Heading>
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-sm font-extrabold text-gz-text">${product.price}</span>
           {product.sizes.length > 0 && (

@@ -13,9 +13,16 @@ const SPARKLES = [
 // A mystery "tier" card. Lives inside the dark Mystery Kits panel: a glassy translucent
 // body with a gradient header holding a floating "?" and sparkles, distinct from the
 // white JerseyCard used in the main kit grid.
-export function MysteryCard({ product }: { product: Product }) {
+export function MysteryCard({
+  product,
+  headingLevel = "h3",
+}: {
+  product: Product;
+  headingLevel?: "h2" | "h3";
+}) {
   const soldOut = isSoldOut(product);
   const tagline = mysteryKitDescription();
+  const Heading = headingLevel;
 
   return (
     <Link
@@ -62,9 +69,9 @@ export function MysteryCard({ product }: { product: Product }) {
           <p className="text-[10px] font-extrabold uppercase tracking-wide text-gz-magenta">
             Mystery Kit
           </p>
-          <h3 className="mt-1.5 font-[family-name:var(--font-display)] text-lg uppercase leading-none text-white">
+          <Heading className="mt-1.5 font-[family-name:var(--font-display)] text-lg uppercase leading-none text-white">
             {product.name}
-          </h3>
+          </Heading>
           <p className="mt-1.5 text-xs leading-snug text-white/60">{tagline}</p>
         </div>
         <div className="shrink-0 text-right">

@@ -164,7 +164,7 @@ export function CatalogFilters({
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {visible.map((product) => (
-              <JerseyCard key={product.id} product={product} />
+              <JerseyCard key={product.id} product={product} headingLevel="h2" />
             ))}
           </div>
         )}
