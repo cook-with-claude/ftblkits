@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireSameOrigin } from "@/lib/admin/server";
 import { parseSectionBody, SECTION_COLUMNS, toAdminSection } from "@/lib/admin/sections";
+import { purgeCatalog } from "@/lib/cache-tags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,5 +59,6 @@ export async function POST(req: NextRequest) {
     console.error("[admin/sections] create failed", error);
     return NextResponse.json({ error: "Could not add section" }, { status: 500 });
   }
+  purgeCatalog();
   return NextResponse.json({ section: toAdminSection(data) }, { status: 201 });
 }

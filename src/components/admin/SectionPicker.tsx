@@ -54,7 +54,7 @@ export function SectionPicker({
                 return (
                   <label
                     key={section.id}
-                    className={`flex min-h-[36px] cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors duration-200 ${
+                    className={`flex min-h-[36px] cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors gz-base ease-gz-out ${
                       isOn
                         ? "border-gz-navy bg-gz-navy text-white"
                         : "border-gz-border bg-gz-bg text-gz-navy hover:border-gz-navy/40"

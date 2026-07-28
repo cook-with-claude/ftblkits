@@ -1,7 +1,12 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { CartPanel } from "@/components/cart/CartPanel";
+import { FaviconIndicator } from "@/components/feedback/FaviconIndicator";
+import { NavigationProgress } from "@/components/feedback/NavigationProgress";
+import { OfflineBanner } from "@/components/feedback/OfflineBanner";
+import { ScrollReveal } from "@/components/feedback/ScrollReveal";
+import { Toaster } from "@/components/feedback/Toaster";
 import { getSections } from "@/lib/supabase/queries";
 
 export async function StorefrontShell({ children }: { children: ReactNode }) {
@@ -9,6 +14,16 @@ export async function StorefrontShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      {/* NavigationProgress reads useSearchParams, which Next requires to sit
+          under a Suspense boundary. It renders nothing until a navigation is
+          slow enough to report, so the fallback is genuinely empty. */}
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
+      <FaviconIndicator />
+      <OfflineBanner />
+      <ScrollReveal />
+
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-gz-navy focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
@@ -26,6 +41,7 @@ export async function StorefrontShell({ children }: { children: ReactNode }) {
           backdrop-blur creates a containing block that would clip this
           fixed-position overlay to the header's own box. */}
       <CartPanel />
+      <Toaster />
     </>
   );
 }

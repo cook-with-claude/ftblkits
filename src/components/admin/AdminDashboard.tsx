@@ -1,16 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 import { renameSectionMembership } from "@/lib/sections";
+import { begin } from "@/lib/pending";
+import { toast } from "@/lib/toast";
+import { Spinner } from "@/components/feedback/Spinner";
+import { FaviconIndicator } from "@/components/feedback/FaviconIndicator";
+import { NavigationProgress } from "@/components/feedback/NavigationProgress";
+import { Skeleton } from "@/components/skeletons/Skeleton";
+import { Toaster } from "@/components/feedback/Toaster";
 import { fetchProducts, fetchSections } from "./api";
 import { KitCard } from "./KitCard";
 import { AddKitForm } from "./AddKitForm";
 import { SectionsPanel } from "./SectionsPanel";
 
 const tabBase =
-  "min-h-[44px] cursor-pointer rounded-full px-4 py-2 text-sm font-extrabold uppercase tracking-wide transition-colors duration-200";
+  "min-h-[44px] cursor-pointer rounded-full px-4 py-2 text-sm font-extrabold uppercase tracking-wide transition-colors gz-base ease-gz-out";
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -19,6 +26,7 @@ export function AdminDashboard() {
   const [sections, setSections] = useState<AdminSection[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Both are loaded up front: the sections list feeds the Sections tab AND the
   // per-kit section picker, and the products list feeds the per-section counts.
@@ -44,9 +52,28 @@ export function AdminDashboard() {
     );
   }, [products, query]);
 
+  // Previously this awaited the request with no pending state and no error
+  // handling, so a failed logout was indistinguishable from nothing happening.
   async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.refresh();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    const end = begin();
+    try {
+      const res = await fetch("/api/admin/logout", {
+        method: "POST",
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) throw new Error("Log out failed");
+      router.refresh();
+    } catch {
+      toast("Could not log out — check your connection and try again.");
+      setLoggingOut(false);
+    } finally {
+      end();
+    }
+    // Deliberately not clearing loggingOut on success: router.refresh() swaps
+    // this dashboard for the login form, and re-enabling the button first would
+    // just flash it back to "Log out".
   }
 
   function upsert(updated: AdminProduct) {
@@ -114,16 +141,19 @@ export function AdminDashboard() {
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="cursor-pointer rounded-full border border-gz-border px-4 py-2 text-sm font-bold text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt"
+              className="cursor-pointer rounded-full border border-gz-border px-4 py-2 text-sm font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt"
             >
               View shop
             </a>
             <button
               type="button"
               onClick={logout}
-              className="cursor-pointer rounded-full bg-gz-navy px-4 py-2 text-sm font-bold text-white transition-opacity duration-200 hover:opacity-90"
+              disabled={loggingOut}
+              // min-w so the label swap does not resize the button mid-request.
+              className="flex min-w-[104px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy px-4 py-2 text-sm font-bold text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Log out
+              {loggingOut && <Spinner />}
+              {loggingOut ? "Logging out…" : "Log out"}
             </button>
           </div>
 
@@ -189,8 +219,16 @@ export function AdminDashboard() {
               />
             </div>
 
+            {/* Skeleton rather than the old "Loading kits…" line: the text
+                occupied a single row and the real list then shoved the page
+                down. These match the KitCard height, so nothing jumps.
+                Mirrors what SectionsPanel already did. */}
             {products === null && !error && (
-              <p className="mt-10 text-center text-gz-muted">Loading kits…</p>
+              <div className="mt-4 space-y-4" aria-busy="true" aria-label="Loading kits">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <Skeleton key={i} className="h-40 rounded-2xl" />
+                ))}
+              </div>
             )}
 
             {products !== null && visible.length === 0 && (
@@ -215,6 +253,15 @@ export function AdminDashboard() {
           </>
         )}
       </div>
+      {/* /admin sits outside the storefront route group, so it does not inherit
+          StorefrontShell's feedback layer and needs its own. Both read the same
+          pending store that components/admin/api.ts feeds, so saves and uploads
+          get the progress bar and the tab spinner too. */}
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
+      <FaviconIndicator />
+      <Toaster />
     </main>
   );
 }

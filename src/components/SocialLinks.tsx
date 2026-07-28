@@ -54,7 +54,7 @@ export function SocialLinks() {
             title={label}
             // The glyph carries no text, so the accessible name comes from
             // aria-label and the 40px box keeps it a comfortable tap target.
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-gz-navy transition-colors duration-200 hover:bg-gz-surface hover:text-gz-red focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gz-navy"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-surface hover:text-gz-red focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gz-navy"
           >
             <Icon />
           </a>

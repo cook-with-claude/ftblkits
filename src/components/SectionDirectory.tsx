@@ -33,7 +33,7 @@ export function SectionDirectory({
                 <Link
                   key={section.id}
                   href={sectionHref(section.slug)}
-                  className="group relative flex min-h-[44px] cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border border-gz-border bg-gz-surface px-4 py-4 transition-colors duration-200 hover:border-gz-navy/40 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+                  className="group relative flex min-h-[44px] cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border border-gz-border bg-gz-surface px-4 py-4 transition-colors gz-base ease-gz-out hover:border-gz-navy/40 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
                 >
                   {/* Accent edge — the only per-section colour on this card, so a
                       badly chosen hex can never sit behind text. */}

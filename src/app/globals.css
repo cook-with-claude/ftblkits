@@ -22,6 +22,27 @@
 
   /* Ordering */
   --gz-whatsapp: #25d366;
+
+  /* Motion — one scale, referenced by every transition in the app.
+     Before this existed, ~45 sites used duration-200, four used 300, one used
+     500, and a single card hover fired all of them at once. */
+  --gz-dur-fast: 120ms;   /* colour / opacity on small controls */
+  --gz-dur-base: 200ms;   /* the default, and what most of the app already used */
+  --gz-dur-slow: 320ms;   /* cards, disclosures, panels */
+  --gz-dur-slower: 480ms; /* image zoom — deliberately trails its container */
+
+  --gz-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --gz-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Overshoot-free but fast-settling; used where something travels a distance. */
+  --gz-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Stacking order. These were previously bare numbers scattered across
+     components, with the header and the fixed order bar both sitting on 30. */
+  --gz-z-sticky: 30;
+  --gz-z-dropdown: 40;
+  --gz-z-overlay: 50;
+  --gz-z-progress: 60;
+  --gz-z-toast: 70;
 }
 
 @theme inline {
@@ -38,6 +59,36 @@
   --color-gz-body: var(--gz-body);
   --color-gz-muted: var(--gz-muted);
   --color-gz-whatsapp: var(--gz-whatsapp);
+
+  /* Tailwind's --ease-* namespace generates ease-gz-out / ease-gz-in-out /
+     ease-gz-spring utilities from these. */
+  --ease-gz-out: var(--gz-ease-out);
+  --ease-gz-in-out: var(--gz-ease-in-out);
+  --ease-gz-spring: var(--gz-ease-spring);
+}
+
+/* Tailwind v4 has no --duration-* theme namespace, so the duration scale is
+   exposed as utilities instead. Pairs with the ease-gz-* utilities above.
+
+   --tw-duration is what Tailwind's own transition-* utilities read, so setting
+   it means these win regardless of the order the two rules are emitted in.
+   transition-duration is set as well, so the class still does something on an
+   element that never gets a transition-* utility. */
+@utility gz-fast {
+  --tw-duration: var(--gz-dur-fast);
+  transition-duration: var(--gz-dur-fast);
+}
+@utility gz-base {
+  --tw-duration: var(--gz-dur-base);
+  transition-duration: var(--gz-dur-base);
+}
+@utility gz-slow {
+  --tw-duration: var(--gz-dur-slow);
+  transition-duration: var(--gz-dur-slow);
+}
+@utility gz-slower {
+  --tw-duration: var(--gz-dur-slower);
+  transition-duration: var(--gz-dur-slower);
 }
 
 html, body {
@@ -95,8 +146,23 @@ html, body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: none; }
 }
+/* --gz-rise-delay staggers siblings. Without it the hero's five blocks all
+   fired at once, which read as one block fading in rather than a sequence. */
 .gz-rise {
-  animation: gz-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: gz-rise 0.6s var(--gz-ease-out) both;
+  animation-delay: var(--gz-rise-delay, 0ms);
+}
+
+/* Entrance for the nav dropdowns. Enter-only, deliberately: a dropdown is
+   dismissed and forgotten, so an exit animation would only delay the next
+   click. The full mount/unmount treatment is reserved for the cart and the
+   mobile drawer, where the element is large enough that vanishing is jarring. */
+@keyframes gz-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.gz-pop {
+  animation: gz-pop var(--gz-dur-fast) var(--gz-ease-out) both;
 }
 
 /* Diagonal light sweep across a card image on hover */
@@ -111,11 +177,30 @@ html, body {
   100% { background-position: -200% 0; }
 }
 
+/* Skeleton placeholder. Deliberately low-contrast: a skeleton that pulses hard
+   reads as an error state rather than as "nearly there". */
+.gz-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--gz-bg-alt) 0%,
+    color-mix(in srgb, var(--gz-border) 55%, var(--gz-bg-alt)) 50%,
+    var(--gz-bg-alt) 100%
+  );
+  background-size: 200% 100%;
+  animation: gz-shimmer 1.4s linear infinite;
+}
+
 /* Card hover interactions — descendant effects that can't live inline.
-   Any element with .gz-card drives these on its children. */
-.gz-card:hover .gz-card-img { transform: scale(1.075); }
-.gz-card:hover .gz-sheen { animation: gz-sheen 0.95s ease; }
-.gz-card:hover .gz-quick { opacity: 1; transform: translateY(0); }
+   Any element with .gz-card drives these on its children.
+   :focus-within is not decoration: the lift is driven by this wrapper while
+   focus lands on the inner <a>, so without it keyboard users never saw the
+   image zoom, the sheen, or the "View kit" overlay at all. */
+.gz-card:hover .gz-card-img,
+.gz-card:focus-within .gz-card-img { transform: scale(1.075); }
+.gz-card:hover .gz-sheen,
+.gz-card:focus-within .gz-sheen { animation: gz-sheen 0.95s var(--gz-ease-out); }
+.gz-card:hover .gz-quick,
+.gz-card:focus-within .gz-quick { opacity: 1; transform: translateY(0); }
 
 /* Slow twinkle for the scattered mystery sparkles */
 @keyframes gz-twinkle {
@@ -126,9 +211,38 @@ html, body {
   animation: gz-twinkle 3s ease-in-out infinite;
 }
 
+/* Scroll reveal. The hiding rule is gated on a flag that scroll-reveal.ts sets
+   on <html> before first paint, so with JS disabled or broken every
+   [data-reveal] element simply renders normally instead of staying invisible.
+   --gz-reveal-order cascades siblings within a grid. */
+html[data-reveal-ready] [data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--gz-dur-slow) var(--gz-ease-out),
+    transform var(--gz-dur-slow) var(--gz-ease-out);
+  transition-delay: calc(var(--gz-reveal-order, 0) * 55ms);
+}
+html[data-reveal-ready] [data-reveal][data-revealed] {
+  opacity: 1;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    /* Without this the infinite loops (gz-float, gz-float-lg, gz-twinkle) keep
+       cycling at 0.01ms forever — visually static but still driving the
+       compositor. Clamping the count is what actually stops them. */
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Reveal-on-scroll is motion by definition: skip it rather than snapping. */
+  html[data-reveal-ready] [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

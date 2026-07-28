@@ -12,7 +12,7 @@ export function StorefrontNotFoundContent() {
       </p>
       <Link
         href="/kits"
-        className="mt-7 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gz-red px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-all duration-200 hover:-translate-y-0.5"
+        className="mt-7 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gz-red px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-all gz-base ease-gz-out hover:-translate-y-0.5"
       >
         Browse all kits →
       </Link>

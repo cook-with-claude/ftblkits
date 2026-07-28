@@ -8,6 +8,7 @@ import {
   toAdminProduct,
 } from "@/lib/admin/server";
 import { unknownSectionsError } from "@/lib/admin/sections";
+import { purgeCatalog } from "@/lib/cache-tags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,5 +65,6 @@ export async function POST(req: NextRequest) {
     console.error("[admin/products] create failed", error);
     return NextResponse.json({ error: "Could not add kit" }, { status: 500 });
   }
+  purgeCatalog();
   return NextResponse.json({ product: toAdminProduct(data) }, { status: 201 });
 }

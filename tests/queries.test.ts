@@ -6,12 +6,16 @@ vi.mock("@/lib/supabase/client", () => ({
   supabase: { from: mocks.from },
 }));
 
+// The un-memoised layer. These tests are about query semantics — empty vs
+// outage, row mapping, and the guards that skip a pointless round trip — so
+// they deliberately bypass the cache wrappers, which would otherwise both
+// require a Next request context and collapse the call counts being asserted.
 import {
-  getAllProducts,
-  getProductById,
-  getSections,
-  getSectionBySlug,
-  getProductsInSection,
+  fetchAllProducts as getAllProducts,
+  fetchProductById as getProductById,
+  fetchSections as getSections,
+  fetchSectionBySlug as getSectionBySlug,
+  fetchProductsInSection as getProductsInSection,
   checkCatalogConnection,
 } from "@/lib/supabase/queries";
 

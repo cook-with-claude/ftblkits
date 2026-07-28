@@ -99,7 +99,7 @@ export function CatalogFilters({
           type="button"
           onClick={() => setInStockOnly((v) => !v)}
           aria-pressed={inStockOnly}
-          className={`min-h-[44px] cursor-pointer rounded-xl border px-4 py-3 text-sm font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
+          className={`min-h-[44px] cursor-pointer rounded-xl border px-4 py-3 text-sm font-bold transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
             inStockOnly
               ? "border-gz-green bg-gz-green text-white"
               : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"
@@ -115,7 +115,7 @@ export function CatalogFilters({
             type="button"
             onClick={() => setTeam(null)}
             aria-pressed={team === null}
-            className={`min-h-[44px] cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
+            className={`min-h-[44px] cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
               team === null
                 ? "border-gz-navy bg-gz-navy text-white"
                 : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"
@@ -129,7 +129,7 @@ export function CatalogFilters({
               type="button"
               onClick={() => setTeam(team === t ? null : t)}
               aria-pressed={team === t}
-              className={`min-h-[44px] cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
+              className={`min-h-[44px] cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40 ${
                 team === t
                   ? "border-gz-navy bg-gz-navy text-white"
                   : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"

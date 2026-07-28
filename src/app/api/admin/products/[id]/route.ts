@@ -10,6 +10,7 @@ import {
   validatePublishableProduct,
 } from "@/lib/admin/server";
 import { unknownSectionsError } from "@/lib/admin/sections";
+import { purgeCatalog } from "@/lib/cache-tags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +71,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       console.error("[admin/products] replaced image cleanup failed", cleanupError);
     }
   }
+  purgeCatalog();
   return NextResponse.json({ product: toAdminProduct(data) });
 }
 
@@ -107,5 +109,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       console.error("[admin/products] deleted image cleanup failed", cleanupError);
     }
   }
+  purgeCatalog();
   return NextResponse.json({ ok: true });
 }

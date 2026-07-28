@@ -6,6 +6,7 @@ import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 import { deleteProduct, discardUploadedImage, updateProduct, uploadImage } from "./api";
 import { PRODUCT_LIMITS } from "@/lib/admin/validation";
 import { SectionPicker } from "./SectionPicker";
+import { Spinner } from "@/components/feedback/Spinner";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -186,16 +187,18 @@ export function KitCard({
             type="button"
             onClick={remove}
             disabled={busy !== null}
-            className="cursor-pointer rounded-full border border-gz-red px-4 py-2 text-sm font-bold text-gz-red transition-colors duration-200 hover:bg-gz-red hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-w-[104px] cursor-pointer items-center justify-center gap-2 rounded-full border border-gz-red px-4 py-2 text-sm font-bold text-gz-red transition-colors gz-base ease-gz-out hover:bg-gz-red hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
+            {busy === "delete" && <Spinner />}
             {busy === "delete" ? "Deleting…" : "Delete"}
           </button>
           <button
             type="button"
             onClick={save}
             disabled={busy !== null}
-            className="cursor-pointer rounded-full bg-gz-navy px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-w-[136px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
+            {(busy === "save" || busy === "upload") && <Spinner />}
             {busy === "save" ? "Saving…" : busy === "upload" ? "Uploading…" : "Save"}
           </button>
         </div>

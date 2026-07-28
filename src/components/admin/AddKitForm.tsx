@@ -6,6 +6,7 @@ import type { AdminProduct, AdminSection } from "@/lib/admin/types";
 import { createProduct, discardUploadedImage, uploadImage } from "./api";
 import { PRODUCT_LIMITS } from "@/lib/admin/validation";
 import { SectionPicker } from "./SectionPicker";
+import { Spinner } from "@/components/feedback/Spinner";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -101,7 +102,7 @@ export function AddKitForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full cursor-pointer rounded-2xl border-2 border-dashed border-gz-border py-4 text-sm font-extrabold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:border-gz-navy/40 hover:bg-gz-surface"
+        className="w-full cursor-pointer rounded-2xl border-2 border-dashed border-gz-border py-4 text-sm font-extrabold uppercase tracking-wide text-gz-navy transition-colors gz-base ease-gz-out hover:border-gz-navy/40 hover:bg-gz-surface"
       >
         + Add a new kit
       </button>
@@ -187,15 +188,19 @@ export function AddKitForm({
           type="button"
           onClick={cancel}
           disabled={busy !== null}
-          className="cursor-pointer rounded-full border border-gz-border px-5 py-2 text-sm font-bold text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt"
+          // Was `disabled` with no disabled styling, so it stayed looking
+          // clickable while doing nothing. Now matches the submit button.
+          className="flex min-w-[128px] cursor-pointer items-center justify-center gap-2 rounded-full border border-gz-border px-5 py-2 text-sm font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt disabled:cursor-not-allowed disabled:opacity-50"
         >
+          {busy === "cleanup" && <Spinner />}
           {busy === "cleanup" ? "Cleaning up…" : "Cancel"}
         </button>
         <button
           type="submit"
           disabled={busy !== null || imageUrl === null}
-          className="cursor-pointer rounded-full bg-gz-green px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-w-[172px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-green px-5 py-2 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
+          {(busy === "create" || busy === "upload") && <Spinner />}
           {busy === "create" ? "Adding…" : busy === "upload" ? "Uploading…" : imageUrl ? "Add kit" : "Upload a photo"}
         </button>
       </div>

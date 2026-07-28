@@ -53,8 +53,11 @@ export default async function HomePage() {
     <>
       <Hero featured={featured} sections={sections} />
 
+      {/* data-reveal is picked up by the single page-wide IntersectionObserver
+          in lib/scroll-reveal.ts. Because it is an attribute rather than a
+          wrapper component, these stay server components. */}
       {sections.length > 0 && (
-        <div className="mx-auto max-w-6xl px-4 pt-14">
+        <div className="mx-auto max-w-6xl px-4 pt-14" data-reveal>
           <SectionDirectory sections={sections} />
         </div>
       )}
@@ -62,7 +65,7 @@ export default async function HomePage() {
       <MysteryKits kits={mystery} />
 
       {latest.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-16 pt-14">
+        <section className="mx-auto max-w-6xl px-4 pb-16 pt-14" data-reveal>
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-gz-red">
@@ -75,7 +78,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/kits"
-              className="shrink-0 cursor-pointer text-sm font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
+              className="shrink-0 cursor-pointer text-sm font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-red"
             >
               View all →
             </Link>

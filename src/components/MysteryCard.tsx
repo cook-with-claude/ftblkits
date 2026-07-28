@@ -27,7 +27,7 @@ export function MysteryCard({
   return (
     <Link
       href={`/jersey/${product.id}`}
-      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta"
+      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-[transform,border-color,background-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta active:translate-y-0 active:gz-fast"
     >
       <div
         className="relative h-40 overflow-hidden"
@@ -78,7 +78,7 @@ export function MysteryCard({
           <p className="font-[family-name:var(--font-display)] text-[27px] leading-none text-white">
             ${product.price}
           </p>
-          <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-gz-magenta transition-transform duration-200 group-hover:translate-x-0.5">
+          <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-gz-magenta transition-transform gz-base ease-gz-out group-hover:translate-x-0.5">
             Open →
           </span>
         </div>

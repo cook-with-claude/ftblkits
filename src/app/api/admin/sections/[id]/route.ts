@@ -3,6 +3,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireSameOrigin } from "@/lib/admin/server";
 import { parseSectionBody, SECTION_COLUMNS, toAdminSection } from "@/lib/admin/sections";
 import { isUuid } from "@/lib/ids";
+import { purgeCatalog } from "@/lib/cache-tags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (refetchError || !renamed) {
       return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
+    purgeCatalog();
     return NextResponse.json({ section: toAdminSection(renamed) });
   }
 
@@ -87,6 +89,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     console.error("[admin/sections] update failed", error);
     return NextResponse.json({ error: "Could not save section" }, { status: 500 });
   }
+  purgeCatalog();
   return NextResponse.json({ section: toAdminSection(data) });
 }
 
@@ -110,5 +113,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     console.error("[admin/sections] delete failed", error);
     return NextResponse.json({ error: "Could not delete section" }, { status: 500 });
   }
+  purgeCatalog();
   return NextResponse.json({ ok: true });
 }
