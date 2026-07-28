@@ -26,7 +26,13 @@ export function JerseyCard({
   const Heading = headingLevel;
 
   return (
-    <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-all duration-300 hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15">
+    // One hover used to fire four durations across three easings — 300ms lift,
+    // 300ms overlay, 500ms zoom, 950ms sheen — which is most of why the cards
+    // felt unsettled. Now the container effects share gz-slow and only the
+    // image deliberately trails behind it.
+    // transition-[...] rather than transition-all: transition-all also animates
+    // properties nothing here intends to change.
+    <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-[transform,box-shadow,border-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15 focus-within:-translate-y-1.5 focus-within:border-gz-navy/30 focus-within:shadow-xl focus-within:shadow-gz-navy/15 active:translate-y-0 active:gz-fast">
       <Link
         href={`/jersey/${product.id}`}
         className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gz-navy"
@@ -38,7 +44,7 @@ export function JerseyCard({
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, 25vw"
-            className="gz-card-img object-cover transition-transform duration-500 ease-out"
+            className="gz-card-img object-cover transition-transform gz-slower ease-gz-out"
           />
         )}
 
@@ -62,7 +68,7 @@ export function JerseyCard({
         )}
 
         {/* Quick-view overlay */}
-        <div className="gz-quick pointer-events-none absolute inset-x-2.5 bottom-2.5 translate-y-2.5 opacity-0 transition-all duration-300">
+        <div className="gz-quick pointer-events-none absolute inset-x-2.5 bottom-2.5 translate-y-2.5 opacity-0 transition-[opacity,transform] gz-slow ease-gz-out">
           <span className="block rounded-lg bg-gz-navy-deep/90 py-2 text-center text-[11px] font-extrabold uppercase tracking-wide text-white backdrop-blur-sm">
             View kit
           </span>

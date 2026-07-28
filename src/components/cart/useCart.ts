@@ -8,6 +8,7 @@ import {
   setLineQuantity,
   type CartLine,
 } from "@/lib/cart";
+import { toast } from "@/lib/toast";
 
 const CART_KEY = "gz-cart";
 // localStorage's own "storage" event only fires in *other* tabs, so same-tab
@@ -38,7 +39,16 @@ function readCart(): CartLine[] {
 }
 
 function writeCart(lines: CartLine[]): void {
-  window.localStorage.setItem(CART_KEY, JSON.stringify(lines));
+  try {
+    window.localStorage.setItem(CART_KEY, JSON.stringify(lines));
+  } catch (err) {
+    // setItem throws in Safari's private mode and when the origin's quota is
+    // full. Unguarded, that propagated out of the click handler and add-to-cart
+    // silently stopped working with nothing shown to the user.
+    console.error("[cart] could not save cart:", err);
+    toast("We could not save your cart — your browser is blocking storage.");
+    return;
+  }
   window.dispatchEvent(new Event(CART_EVENT));
 }
 

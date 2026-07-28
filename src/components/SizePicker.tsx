@@ -25,7 +25,7 @@ export function SizePicker({ product }: { product: Product }) {
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => setSelected(size)}
-                  className={`flex h-12 min-w-12 cursor-pointer items-center justify-center rounded-xl px-3 text-sm font-bold transition-colors duration-200 ${
+                  className={`flex h-12 min-w-12 cursor-pointer items-center justify-center rounded-xl px-3 text-sm font-bold transition-colors gz-base ease-gz-out ${
                     isSelected
                       ? "bg-gz-navy text-white"
                       : "border border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/40"
@@ -47,7 +47,7 @@ export function SizePicker({ product }: { product: Product }) {
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             disabled={quantity <= 1}
             aria-label="Decrease quantity"
-            className="flex h-12 w-12 items-center justify-center rounded-l-xl text-gz-navy transition-colors duration-200 enabled:cursor-pointer enabled:hover:bg-gz-bg-alt disabled:cursor-not-allowed disabled:text-gz-border"
+            className="flex h-12 w-12 items-center justify-center rounded-l-xl text-gz-navy transition-colors gz-base ease-gz-out enabled:cursor-pointer enabled:hover:bg-gz-bg-alt disabled:cursor-not-allowed disabled:text-gz-border"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5" aria-hidden="true">
               <path d="M5 12h14" strokeLinecap="round" />
@@ -65,7 +65,7 @@ export function SizePicker({ product }: { product: Product }) {
             onClick={() => setQuantity((q) => Math.min(MAX_QTY, q + 1))}
             disabled={quantity >= MAX_QTY}
             aria-label="Increase quantity"
-            className="flex h-12 w-12 items-center justify-center rounded-r-xl text-gz-navy transition-colors duration-200 enabled:cursor-pointer enabled:hover:bg-gz-bg-alt disabled:cursor-not-allowed disabled:text-gz-border"
+            className="flex h-12 w-12 items-center justify-center rounded-r-xl text-gz-navy transition-colors gz-base ease-gz-out enabled:cursor-pointer enabled:hover:bg-gz-bg-alt disabled:cursor-not-allowed disabled:text-gz-border"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5" aria-hidden="true">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />

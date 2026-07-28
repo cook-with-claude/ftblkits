@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
@@ -30,37 +31,49 @@ export function Hero({
         <div className="grid items-center gap-11 md:grid-cols-[1.06fr_0.94fr]">
           {/* Copy */}
           <div>
-            <p className="gz-rise text-xs font-extrabold uppercase tracking-[0.22em] text-white/65">
+            <p
+              className="gz-rise text-xs font-extrabold uppercase tracking-[0.22em] text-white/65"
+              style={{ "--gz-rise-delay": "0ms" } as CSSProperties}
+            >
               Replica football kits · Beirut · Cash on delivery
             </p>
-            <h1 className="gz-rise mt-4 font-[family-name:var(--font-display)] text-5xl uppercase leading-[0.9] tracking-wide sm:text-7xl">
+            <h1
+              className="gz-rise mt-4 font-[family-name:var(--font-display)] text-5xl uppercase leading-[0.9] tracking-wide sm:text-7xl"
+              style={{ "--gz-rise-delay": "60ms" } as CSSProperties}
+            >
               Wear your
               <br />
               colours<span className="text-gz-red">.</span>
             </h1>
-            <p className="gz-rise mt-5 max-w-md text-base leading-relaxed text-white/70 sm:text-lg">
+            <p
+              className="gz-rise mt-5 max-w-md text-base leading-relaxed text-white/70 sm:text-lg"
+              style={{ "--gz-rise-delay": "120ms" } as CSSProperties}
+            >
               Replica kits from every league, club and country — in Beirut. Pick your size
               and order in seconds on WhatsApp.
             </p>
 
-            <div className="gz-rise mt-8 flex flex-wrap gap-3">
+            <div className="gz-rise mt-8 flex flex-wrap gap-3" style={{ "--gz-rise-delay": "180ms" } as CSSProperties}>
               <Link
                 href="/kits"
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gz-red px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-12px_rgba(225,6,0,0.7)]"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gz-red px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-all gz-base ease-gz-out hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-12px_rgba(225,6,0,0.7)]"
               >
                 Shop the kits →
               </Link>
               {spotlight && (
                 <Link
                   href={sectionHref(spotlight.slug)}
-                  className="inline-flex cursor-pointer items-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-colors duration-200 hover:bg-white/10"
+                  className="inline-flex cursor-pointer items-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-extrabold uppercase tracking-wide text-white transition-colors gz-base ease-gz-out hover:bg-white/10"
                 >
                   {spotlight.label}
                 </Link>
               )}
             </div>
 
-            <div className="gz-rise mt-8 flex flex-wrap gap-x-6 gap-y-3.5">
+            <div
+              className="gz-rise mt-8 flex flex-wrap gap-x-6 gap-y-3.5"
+              style={{ "--gz-rise-delay": "240ms" } as CSSProperties}
+            >
               {TRUST.map((t) => (
                 <span key={t.label} className="inline-flex items-center gap-2 text-[13px] font-semibold text-white/75">
                   <span className={`h-[7px] w-[7px] rounded-full ${t.color}`} aria-hidden="true" />
@@ -92,7 +105,7 @@ export function Hero({
 
                 <Link
                   href={`/jersey/${featured.id}`}
-                  className="absolute -right-2 bottom-6 flex cursor-pointer items-center gap-4 rounded-[18px] bg-white px-4 py-3 text-gz-navy-deep shadow-[0_24px_44px_-16px_rgba(0,0,0,0.55)] transition-transform duration-200 hover:-translate-y-0.5"
+                  className="absolute -right-2 bottom-6 flex cursor-pointer items-center gap-4 rounded-[18px] bg-white px-4 py-3 text-gz-navy-deep shadow-[0_24px_44px_-16px_rgba(0,0,0,0.55)] transition-transform gz-base ease-gz-out hover:-translate-y-0.5"
                 >
                   <div>
                     <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-gz-red">

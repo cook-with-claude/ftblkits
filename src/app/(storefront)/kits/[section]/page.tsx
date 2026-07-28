@@ -34,7 +34,15 @@ export default async function SectionPage({
   params: Promise<{ section: string }>;
 }) {
   const { section: slug } = await params;
-  const sectionResult = await getSectionBySlug(slug);
+
+  // Issued together rather than one after the other. The products query is
+  // keyed on the slug from the URL, not on anything the section row returns, so
+  // there was never a real dependency between them — only a serial await that
+  // doubled the page's latency.
+  const [sectionResult, catalog] = await Promise.all([
+    getSectionBySlug(slug),
+    getProductsInSection(slug),
+  ]);
 
   // Hidden sections are unreadable by the public key thanks to RLS, so "hidden"
   // arrives here as not_found without any extra check.
@@ -44,7 +52,6 @@ export default async function SectionPage({
   }
   const section = sectionResult.section;
 
-  const catalog = await getProductsInSection(section.slug);
   if (catalog.status === "unavailable") {
     throw new Error("The live catalog is temporarily unavailable");
   }
@@ -57,7 +64,7 @@ export default async function SectionPage({
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8">
       <Link
         href="/kits"
-        className="inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
+        className="inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-red"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />

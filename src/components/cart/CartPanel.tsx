@@ -5,10 +5,15 @@ import Image from "next/image";
 import { buildCartMessage, cartCount, cartTotal, formatPrice } from "@/lib/cart";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { WHATSAPP_NUMBER } from "@/lib/config";
+import { lockBodyScroll, useDisclosureTransition } from "@/lib/motion";
 import { CART_TRIGGER_ATTR, subscribeToCartOpen, useCart } from "./useCart";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
+
+// Matches --gz-dur-slow. Kept in sync by hand because the hook needs the number
+// in JS to know when the exit animation has finished and the panel can unmount.
+const TRANSITION_MS = 320;
 
 // Mounted as a sibling of <Header>, never inside it. The header carries
 // `backdrop-blur`, and a backdrop-filter establishes a containing block for
@@ -22,6 +27,11 @@ export function CartPanel() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  // `mounted` outlives `open` by one transition, which is what gives the panel
+  // an exit animation. Previously this component returned null the moment it
+  // closed, so a full-height drawer simply vanished.
+  const { mounted, entered } = useDisclosureTransition(open, TRANSITION_MS);
 
   useEffect(() => subscribeToCartOpen(() => setOpen(true)), []);
 
@@ -67,22 +77,22 @@ export function CartPanel() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  // Stop the page behind the panel from scrolling.
+  // Stop the page behind the panel from scrolling. The shared helper also
+  // compensates for the scrollbar's width, so the page no longer shifts
+  // sideways as the panel opens.
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
+    return lockBodyScroll();
   }, [open]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0" style={{ zIndex: "var(--gz-z-overlay)" }}>
       <div
-        className="absolute inset-0 bg-gz-navy-deep/50 backdrop-blur-[2px]"
+        className={`absolute inset-0 bg-gz-navy-deep/50 backdrop-blur-[2px] transition-opacity gz-slow ease-gz-out ${
+          entered ? "opacity-100" : "opacity-0"
+        }`}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -92,7 +102,11 @@ export function CartPanel() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-title"
-        className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-gz-bg shadow-[0_0_60px_-12px_rgba(0,0,0,0.5)]"
+        // transform, not width or right: the panel travels on the compositor,
+        // so opening the cart never lays out the page behind it.
+        className={`absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-gz-bg shadow-[0_0_60px_-12px_rgba(0,0,0,0.5)] transition-transform gz-slow ${
+          entered ? "translate-x-0 ease-gz-spring" : "translate-x-full ease-gz-in-out"
+        }`}
       >
         <div className="gz-flagbar h-1 w-full shrink-0" aria-hidden="true" />
 
@@ -108,7 +122,7 @@ export function CartPanel() {
             type="button"
             onClick={onClose}
             aria-label="Close cart"
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
@@ -127,7 +141,7 @@ export function CartPanel() {
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 min-h-11 cursor-pointer rounded-full bg-gz-navy px-6 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity duration-200 hover:opacity-90"
+              className="mt-6 min-h-11 cursor-pointer rounded-full bg-gz-navy px-6 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity gz-base ease-gz-out hover:opacity-90"
             >
               Keep browsing
             </button>
@@ -174,7 +188,7 @@ export function CartPanel() {
                           type="button"
                           onClick={() => setQuantity(line.id, line.size, line.quantity - 1)}
                           aria-label={`Decrease quantity of ${line.name}, size ${line.size}`}
-                          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-l-lg text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt"
+                          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-l-lg text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden="true">
                             <path d="M5 12h14" strokeLinecap="round" />
@@ -187,7 +201,7 @@ export function CartPanel() {
                           type="button"
                           onClick={() => setQuantity(line.id, line.size, line.quantity + 1)}
                           aria-label={`Increase quantity of ${line.name}, size ${line.size}`}
-                          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-r-lg text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt"
+                          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-r-lg text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden="true">
                             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
@@ -222,7 +236,7 @@ export function CartPanel() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-gz-whatsapp text-base font-extrabold text-black transition-opacity duration-200 hover:opacity-90"
+                className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-gz-whatsapp text-base font-extrabold text-black transition-opacity gz-base ease-gz-out hover:opacity-90"
               >
                 Order all on WhatsApp
               </a>

@@ -30,7 +30,7 @@ export function Footer({ sections = [] }: { sections?: Section[] }) {
               <span className="text-xs font-extrabold uppercase tracking-widest text-gz-muted">Shop</span>
               <Link
                 href="/kits"
-                className="cursor-pointer font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
+                className="cursor-pointer font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-red"
               >
                 All Kits
               </Link>
@@ -38,7 +38,7 @@ export function Footer({ sections = [] }: { sections?: Section[] }) {
                 <Link
                   key={section.id}
                   href={sectionHref(section.slug)}
-                  className="cursor-pointer font-bold text-gz-navy transition-colors duration-200 hover:text-gz-red"
+                  className="cursor-pointer font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-red"
                 >
                   {section.label}
                 </Link>
@@ -52,7 +52,7 @@ export function Footer({ sections = [] }: { sections?: Section[] }) {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="cursor-pointer font-bold text-gz-navy transition-colors duration-200 hover:text-gz-green"
+              className="cursor-pointer font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-green"
             >
               Order on WhatsApp
             </a>

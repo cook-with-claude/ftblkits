@@ -8,7 +8,11 @@ import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { groupSections, sectionHref, type Section } from "@/lib/sections";
 import { cartCount } from "@/lib/cart";
+import { lockBodyScroll, useDisclosureTransition } from "@/lib/motion";
 import { CART_TRIGGER_ATTR, openCart, useCart } from "./cart/useCart";
+
+// Matches --gz-dur-base.
+const DRAWER_MS = 200;
 
 const waLink = buildWhatsappLink(
   WHATSAPP_NUMBER,
@@ -43,7 +47,7 @@ function ChevronIcon({ className }: { className?: string }) {
 }
 
 const linkBase =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
+  "inline-flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
 const linkIdle = "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red";
 const linkActive = "bg-gz-bg-alt text-gz-red";
 
@@ -118,8 +122,22 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [drawerOpen]);
 
+  // The drawer used to render in normal flow inside this sticky header, so
+  // opening it physically pushed the entire page down and closing it snapped
+  // everything back. It is an overlay now, which is what makes the menu feel
+  // like it belongs to the header rather than to the document.
+  const drawer = useDisclosureTransition(drawerOpen, DRAWER_MS);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    return lockBodyScroll();
+  }, [drawerOpen]);
+
   return (
-    <header className="sticky top-0 z-30 bg-gz-bg/95 backdrop-blur">
+    <header
+      className="sticky top-0 bg-gz-bg/95 backdrop-blur"
+      style={{ zIndex: "var(--gz-z-sticky)" }}
+    >
       {/* Brand tri-color motif */}
       <div className="gz-flagbar h-1 w-full" aria-hidden="true" />
 
@@ -178,13 +196,14 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                   }`}
                 >
                   {group.label}
-                  <ChevronIcon className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  <ChevronIcon className={`h-3.5 w-3.5 transition-transform gz-base ease-gz-out ${isOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {isOpen && (
                   <div
                     id={panelId}
-                    className="absolute left-0 top-full z-40 mt-1 max-h-[70vh] min-w-56 overflow-y-auto rounded-xl border border-gz-border bg-gz-surface p-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)]"
+                    style={{ zIndex: "var(--gz-z-dropdown)" }}
+                    className="gz-pop absolute left-0 top-full mt-1 max-h-[70vh] min-w-56 overflow-y-auto rounded-xl border border-gz-border bg-gz-surface p-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)]"
                   >
                     <ul className={group.sections.length > 8 ? "sm:columns-2" : undefined}>
                       {group.sections.map((section) => {
@@ -194,7 +213,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                             <Link
                               href={href}
                               aria-current={isActive(href) ? "page" : undefined}
-                              className={`flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold transition-colors duration-200 ${
+                              className={`flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold transition-colors gz-base ease-gz-out ${
                                 isActive(href)
                                   ? "bg-gz-bg-alt text-gz-red"
                                   : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"
@@ -222,7 +241,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             onClick={openCart}
             aria-haspopup="dialog"
             aria-label={count > 0 ? `Open cart, ${count} ${count === 1 ? "kit" : "kits"}` : "Open cart, empty"}
-            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
           >
             <CartIcon className="h-5 w-5" />
             {count > 0 && (
@@ -239,7 +258,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden min-h-11 cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity duration-200 hover:opacity-90 sm:flex"
+            className="hidden min-h-11 cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity gz-base ease-gz-out hover:opacity-90 sm:flex"
           >
             <WhatsAppIcon className="h-4 w-4" />
             Order
@@ -252,7 +271,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             aria-expanded={drawerOpen}
             aria-controls="mobile-primary-navigation"
             aria-label={drawerOpen ? "Close menu" : "Open menu"}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt lg:hidden"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt lg:hidden"
           >
             {drawerOpen ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6" aria-hidden="true">
@@ -268,17 +287,30 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
       </div>
 
       {/* Mobile drawer. Groups use native <details> so they are keyboard- and
-          screen-reader-accessible with no extra state to manage. */}
-      {drawerOpen && (
+          screen-reader-accessible with no extra state to manage.
+          Positioned absolutely against the sticky header so it floats over the
+          page instead of displacing it. */}
+      {drawer.mounted && (
+        <div
+          className={`absolute inset-x-0 top-full h-screen bg-gz-navy-deep/40 transition-opacity gz-base ease-gz-out lg:hidden ${
+            drawer.entered ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {drawer.mounted && (
         <nav
           id="mobile-primary-navigation"
-          className="max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 lg:hidden"
+          className={`absolute inset-x-0 top-full max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)] transition-[opacity,transform] gz-base ease-gz-out lg:hidden ${
+            drawer.entered ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+          }`}
           aria-label="Mobile"
         >
           <Link
             href="/kits"
             aria-current={isActive("/kits") ? "page" : undefined}
-            className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors duration-200 ${
+            className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors gz-base ease-gz-out ${
               isActive("/kits") ? linkActive : linkIdle
             }`}
           >
@@ -292,7 +324,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                 key={section.id}
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
-                className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors duration-200 ${
+                className={`block rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide transition-colors gz-base ease-gz-out ${
                   isActive(href) ? linkActive : linkIdle
                 }`}
               >
@@ -303,9 +335,9 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
 
           {dropdowns.map((group) => (
             <details key={group.group} open={groupIsActive(group)} className="group">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors duration-200 hover:bg-gz-bg-alt [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 py-3 text-base font-bold uppercase tracking-wide text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt [&::-webkit-details-marker]:hidden">
                 {group.label}
-                <ChevronIcon className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" />
+                <ChevronIcon className="h-4 w-4 transition-transform gz-base ease-gz-out group-open:rotate-180" />
               </summary>
               <div className="pb-1 pl-3">
                 {group.sections.map((section) => {
@@ -315,7 +347,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                       key={section.id}
                       href={href}
                       aria-current={isActive(href) ? "page" : undefined}
-                      className={`flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-200 ${
+                      className={`flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-bold transition-colors gz-base ease-gz-out ${
                         isActive(href)
                           ? "bg-gz-bg-alt text-gz-red"
                           : "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red"

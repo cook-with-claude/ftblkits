@@ -1,7 +1,31 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { supabase } from "./client";
 import type { Product } from "@/lib/types";
 import { isUuid } from "@/lib/ids";
 import { isValidSectionSlug, type NavGroup, type Section } from "@/lib/sections";
+import { CATALOG_TAG } from "@/lib/cache-tags";
+
+// Every storefront page is force-dynamic, so before this each navigation paid
+// for a fresh Supabase round trip — the dominant and most variable part of the
+// wait, especially while a free-tier project is resuming from auto-pause.
+//
+// unstable_cache uses the Data Cache, which is independent of route dynamism:
+// pages still render per-request (so nothing stale is ever served as HTML), but
+// the database work behind them is shared. Admin writes purge CATALOG_TAG, so
+// edits still appear immediately.
+
+// A ceiling, not the mechanism. Tag purges are what keep the catalog fresh;
+// this only bounds staleness if a purge fails to propagate through the hosting
+// layer's cache handler.
+const MAX_AGE_SECONDS = 300;
+
+function cached<Args extends unknown[], Result>(
+  key: string,
+  fn: (...args: Args) => Promise<Result>,
+) {
+  return unstable_cache(fn, [key], { revalidate: MAX_AGE_SECONDS, tags: [CATALOG_TAG] });
+}
 
 const COLUMNS =
   "id, name, team, price, sizes, image_url, in_stock, description, is_mystery, sections";
@@ -79,7 +103,7 @@ function toSection(row: SectionRow): Section {
   };
 }
 
-export async function getAllProducts(): Promise<CatalogResult> {
+async function fetchAllProducts(): Promise<CatalogResult> {
   try {
     const { data, error } = await supabase
       .from("products")
@@ -99,7 +123,7 @@ export async function getAllProducts(): Promise<CatalogResult> {
   }
 }
 
-export async function getProductById(id: string): Promise<ProductResult> {
+async function fetchProductById(id: string): Promise<ProductResult> {
   if (!isUuid(id)) return { status: "not_found" };
 
   try {
@@ -124,7 +148,7 @@ export async function getProductById(id: string): Promise<ProductResult> {
 // Every visible section, ordered the way the nav renders them. RLS restricts the
 // public key to hidden = false, so a hidden section is invisible here without any
 // application-level filter.
-export async function getSections(): Promise<SectionsResult> {
+async function fetchSections(): Promise<SectionsResult> {
   try {
     const { data, error } = await supabase
       .from("sections")
@@ -142,7 +166,7 @@ export async function getSections(): Promise<SectionsResult> {
   }
 }
 
-export async function getSectionBySlug(slug: string): Promise<SectionResult> {
+async function fetchSectionBySlug(slug: string): Promise<SectionResult> {
   // Reject malformed slugs before they reach PostgREST, mirroring how
   // getProductById guards with isUuid.
   if (!isValidSectionSlug(slug)) return { status: "not_found" };
@@ -166,7 +190,7 @@ export async function getSectionBySlug(slug: string): Promise<SectionResult> {
 
 // Scoped to one section rather than filtering the whole catalog client-side, so
 // the payload stays proportional to the section as the catalog grows.
-export async function getProductsInSection(slug: string): Promise<CatalogResult> {
+async function fetchProductsInSection(slug: string): Promise<CatalogResult> {
   if (!isValidSectionSlug(slug)) return { status: "ok", products: [] };
 
   try {
@@ -187,7 +211,7 @@ export async function getProductsInSection(slug: string): Promise<CatalogResult>
 
 // Bounded query for the home page's arrivals rail, so the landing page no longer
 // pulls the entire catalog just to show ten cards.
-export async function getLatestProducts(limit = 10): Promise<CatalogResult> {
+async function fetchLatestProducts(limit = 10): Promise<CatalogResult> {
   try {
     const { data, error } = await supabase
       .from("products")
@@ -205,6 +229,39 @@ export async function getLatestProducts(limit = 10): Promise<CatalogResult> {
   }
 }
 
+// The public read layer. Two layers of memoisation, each solving a different
+// problem:
+//
+//   cache()          — dedupes within a single render. generateMetadata and the
+//                      page body ask for the same record, and the layout and the
+//                      page both ask for the sections; this collapses those.
+//   unstable_cache() — shares the result across requests and purges on write.
+//
+// unstable_cache folds the call arguments into its key, so the parameterised
+// ones stay correctly separated per id / slug / limit.
+// The raw layer is exported too, for tests. They assert the semantics these
+// functions own — empty catalog vs outage, row mapping, the guard clauses that
+// avoid a pointless round trip — and both memoisation layers would interfere:
+// unstable_cache needs a Next request context that a unit test has no reason to
+// stand up, and cache() would collapse the very call counts being asserted.
+export {
+  fetchAllProducts,
+  fetchProductById,
+  fetchSections,
+  fetchSectionBySlug,
+  fetchProductsInSection,
+  fetchLatestProducts,
+};
+
+export const getAllProducts = cache(cached("all-products", fetchAllProducts));
+export const getProductById = cache(cached("product-by-id", fetchProductById));
+export const getSections = cache(cached("sections", fetchSections));
+export const getSectionBySlug = cache(cached("section-by-slug", fetchSectionBySlug));
+export const getProductsInSection = cache(cached("products-in-section", fetchProductsInSection));
+export const getLatestProducts = cache(cached("latest-products", fetchLatestProducts));
+
+// Deliberately uncached. This is the liveness probe behind /api/health — a
+// cached "yes" from five minutes ago is exactly the answer it must never give.
 export async function checkCatalogConnection(): Promise<boolean> {
   try {
     // Sections now power every storefront nav and all /kits/[section] routes.

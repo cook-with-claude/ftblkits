@@ -71,7 +71,10 @@ export function OrderButton({
       : "Order on WhatsApp";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gz-border bg-gz-bg/95 p-4 backdrop-blur">
+    <div
+      className="fixed inset-x-0 bottom-0 border-t border-gz-border bg-gz-bg/95 p-4 backdrop-blur"
+      style={{ zIndex: "var(--gz-z-sticky)" }}
+    >
       <div className="mx-auto max-w-6xl">
         <div aria-live="polite" className="min-h-5">
           {added && (
@@ -93,7 +96,7 @@ export function OrderButton({
             type="button"
             onClick={handleAdd}
             disabled={disabled}
-            className={`flex min-h-12 flex-1 items-center justify-center rounded-full border-2 text-sm font-extrabold uppercase tracking-wide transition-colors duration-200 sm:text-base ${
+            className={`flex min-h-12 flex-1 items-center justify-center rounded-full border-2 text-sm font-extrabold uppercase tracking-wide transition-colors gz-base ease-gz-out sm:text-base ${
               disabled
                 ? "cursor-not-allowed border-gz-border bg-gz-bg-alt text-gz-muted"
                 : "cursor-pointer border-gz-navy text-gz-navy hover:bg-gz-navy hover:text-white"
@@ -108,7 +111,7 @@ export function OrderButton({
             rel="noopener noreferrer"
             aria-disabled={disabled}
             onClick={(e) => disabled && e.preventDefault()}
-            className={`flex min-h-12 flex-1 items-center justify-center rounded-full text-sm font-extrabold transition-opacity duration-200 sm:text-base ${
+            className={`flex min-h-12 flex-1 items-center justify-center rounded-full text-sm font-extrabold transition-opacity gz-base ease-gz-out sm:text-base ${
               disabled
                 ? "cursor-not-allowed bg-gz-bg-alt text-gz-muted"
                 : "cursor-pointer bg-gz-whatsapp text-black hover:opacity-90"

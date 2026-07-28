@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/feedback/Spinner";
 
 export function AdminLogin() {
   const router = useRouter();
@@ -62,8 +63,9 @@ export function AdminLogin() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-6 w-full cursor-pointer rounded-full bg-gz-navy py-3 text-base font-extrabold uppercase tracking-wide text-white transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy py-3 text-base font-extrabold uppercase tracking-wide text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
+          {loading && <Spinner />}
           {loading ? "Checking…" : "Log in"}
         </button>
       </form>

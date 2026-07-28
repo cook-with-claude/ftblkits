@@ -5,6 +5,7 @@ import type { AdminSection } from "@/lib/admin/types";
 import { SECTION_LIMITS } from "@/lib/admin/validation";
 import { NAV_GROUPS, NAV_GROUP_LABELS, isNavGroup } from "@/lib/sections";
 import { deleteSection, updateSection } from "./api";
+import { Spinner } from "@/components/feedback/Spinner";
 
 const fieldClass =
   "w-full rounded-lg border border-gz-border bg-gz-bg px-3 py-2 text-sm text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/30";
@@ -211,16 +212,18 @@ export function SectionRow({
           type="button"
           onClick={save}
           disabled={busy !== null}
-          className="min-h-[44px] cursor-pointer rounded-full bg-gz-navy px-5 py-2.5 text-sm font-extrabold text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-50"
+          className="flex min-h-[44px] min-w-[112px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy px-5 py-2.5 text-sm font-extrabold text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
+          {busy === "save" && <Spinner />}
           {busy === "save" ? "Saving…" : "Save"}
         </button>
         <button
           type="button"
           onClick={remove}
           disabled={busy !== null}
-          className="min-h-[44px] cursor-pointer rounded-full border border-gz-red px-5 py-2.5 text-sm font-extrabold text-gz-red transition-colors duration-200 hover:bg-gz-red hover:text-white disabled:opacity-50"
+          className="flex min-h-[44px] min-w-[124px] cursor-pointer items-center justify-center gap-2 rounded-full border border-gz-red px-5 py-2.5 text-sm font-extrabold text-gz-red transition-colors gz-base ease-gz-out hover:bg-gz-red hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
+          {busy === "delete" && <Spinner />}
           {busy === "delete" ? "Deleting…" : "Delete"}
         </button>
 

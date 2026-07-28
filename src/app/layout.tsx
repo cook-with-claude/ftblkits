@@ -34,6 +34,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* Runs before first paint so reveal-on-scroll elements start hidden
+            rather than painting once and then jumping. Gating the CSS on a flag
+            that only JavaScript can set means a failed bundle leaves the page
+            fully visible instead of blank. Inline scripts are permitted by the
+            CSP in next.config.ts. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.setAttribute('data-reveal-ready','')`,
+          }}
+        />
+      </head>
       <body className={`${anton.variable} ${hanken.variable} bg-gz-bg font-[family-name:var(--font-body)] text-gz-body antialiased`}>
         {children}
       </body>
