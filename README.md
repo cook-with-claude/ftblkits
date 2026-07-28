@@ -118,8 +118,8 @@ an emergency-only option for the project owner.
 ### Sections tab
 - **Add a section:** name it, pick the menu group, and the URL fills itself in. It appears
   in the nav and gets its own page immediately.
-- **Stock a shell:** several leagues, Club Kits, Retro and 25/26 are already there as
-  **hidden** sections. Untick Hidden the day you stock one.
+- **Stock a shell:** the leagues, Club Kits, Retro and 26/27 are already there as empty
+  sections — an empty one renders a "check back soon" page until you tag kits into it.
 - **Reorder:** change the **Order** number — lower shows first within its group.
 - **Recolour:** set an accent to tint that section's header bar and card edge. Leave it
   empty for the default navy.
