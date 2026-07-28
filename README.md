@@ -131,6 +131,38 @@ an emergency-only option for the project owner.
 - **Change the WhatsApp number:** update `NEXT_PUBLIC_WHATSAPP_NUMBER` in Netlify env vars
   and redeploy (it rarely changes).
 
+## Bulk catalog tools (for the owner — terminal)
+Stocking 180 clubs by hand through `/admin` is a week of clicking. Two scripts do it in
+bulk; both need `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
+
+`scripts/catalog-data.mjs` holds the club roster — the 2026/27 membership of all nine
+stocked leagues, plus the confirmed Champions/Europa League qualifiers. It is the single
+source of truth for both scripts, so kit names and photo filenames cannot drift apart.
+**When clubs are promoted or relegated, edit that file and re-run the seed.**
+
+```bash
+npm run seed:catalog -- --dry-run       # what would be added
+npm run seed:catalog                    # add missing kits at $30, S–XXL
+npm run seed:catalog -- --sql           # print the INSERT instead (no credentials needed)
+```
+
+Seeding is idempotent on `(name, team)`: a re-run adds only new clubs and never overwrites
+a price, photo or stock flag set from `/admin`. **New kits are created hidden**, because an
+imageless kit renders as a blank navy square — a visible one would be a broken listing.
+
+```bash
+npm run import:kit-images -- --list-names > expected.txt   # the 360 filenames to supply
+npm run import:kit-images -- ./photos --dry-run            # check matching, upload nothing
+npm run import:kit-images -- ./photos                      # upload, link, and reveal
+```
+
+The importer matches `arsenal-home.jpg` to the "Arsenal Home" kit, uploads it to the `kits`
+bucket and unhides that kit — so kits go live as their photos arrive, not all at once. It
+tolerates the usual supplier naming (`Real_Madrid_Away.jpg`, `psv-eindhoven-1st.jpg`,
+`alaves-away-shirt.jpg`, `dc-united-home (1).jpg`), sniffs magic bytes rather than trusting
+the extension, and refuses to guess when two files claim the same kit. Pass `--keep-hidden`
+to stage a batch and reveal it from `/admin` instead.
+
 ## Docs
 - [`docs/launch-readiness.md`](docs/launch-readiness.md) — read before every production launch.
 - [`docs/session-log.md`](docs/session-log.md) — running history of work sessions, newest first.

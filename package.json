@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit:launch": "node scripts/audit-launch.mjs"
+    "audit:launch": "node scripts/audit-launch.mjs",
+    "seed:catalog": "node scripts/seed-catalog.mjs",
+    "import:kit-images": "node scripts/import-kit-images.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
