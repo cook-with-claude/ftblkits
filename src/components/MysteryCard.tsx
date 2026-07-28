@@ -27,7 +27,7 @@ export function MysteryCard({
   return (
     <Link
       href={`/jersey/${product.id}`}
-      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-[transform,border-color,background-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta active:translate-y-0 active:gz-fast"
+      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-[transform,translate,border-color,background-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta active:translate-y-0 active:gz-fast"
     >
       <div
         className="relative h-40 overflow-hidden"

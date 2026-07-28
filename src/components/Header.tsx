@@ -302,7 +302,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
       {drawer.mounted && (
         <nav
           id="mobile-primary-navigation"
-          className={`absolute inset-x-0 top-full max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)] transition-[opacity,transform] gz-base ease-gz-out lg:hidden ${
+          className={`absolute inset-x-0 top-full max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)] transition-[opacity,transform,translate] gz-base ease-gz-out lg:hidden ${
             drawer.entered ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
           }`}
           aria-label="Mobile"

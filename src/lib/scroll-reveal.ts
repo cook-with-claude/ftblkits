@@ -39,7 +39,11 @@ export function initScrollReveal(): () => void {
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
+        // Also reveal anything already above the viewport. An element the user
+        // has scrolled past must never stay hidden, even though it is not
+        // intersecting.
+        const passed = entry.boundingClientRect.bottom <= 0;
+        if (!entry.isIntersecting && !passed) continue;
         reveal(entry.target);
         // Reveal is one-way: re-hiding on scroll-up is distracting and makes
         // the page feel unstable.
@@ -59,13 +63,49 @@ export function initScrollReveal(): () => void {
 
   observe();
 
+  // Safety net, and the reason this is not observer-only.
+  //
+  // IntersectionObserver reports threshold *crossings*. A single jump — a
+  // restored scroll position on back-navigation, an in-page anchor, a
+  // scrollTo — can take an element straight from below the viewport to above
+  // it without ever intersecting, so no entry is ever delivered and the
+  // element stays at opacity 0 forever. That is content permanently invisible,
+  // which is far worse than a missed animation, so it gets a second check.
+  //
+  // Runs only while something is still hidden, then removes itself.
+  let frame = 0;
+  const sweep = () => {
+    frame = 0;
+    const remaining = document.querySelectorAll(`[data-reveal]:not([${REVEALED_ATTR}])`);
+    if (remaining.length === 0) {
+      window.removeEventListener("scroll", onScroll);
+      return;
+    }
+    remaining.forEach((element) => {
+      if (element.getBoundingClientRect().top < window.innerHeight) {
+        reveal(element);
+        observer.unobserve(element);
+      }
+    });
+  };
+  const onScroll = () => {
+    if (frame) return;
+    frame = requestAnimationFrame(sweep);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+
   // Route changes swap the page contents under us; picking up new nodes keeps
   // the effect working after client-side navigation.
-  const mutations = new MutationObserver(observe);
+  const mutations = new MutationObserver(() => {
+    observe();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  });
   mutations.observe(document.body, { childList: true, subtree: true });
 
   return () => {
     observer.disconnect();
     mutations.disconnect();
+    window.removeEventListener("scroll", onScroll);
+    if (frame) cancelAnimationFrame(frame);
   };
 }

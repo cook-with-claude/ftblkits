@@ -30,9 +30,12 @@ export function JerseyCard({
     // 300ms overlay, 500ms zoom, 950ms sheen — which is most of why the cards
     // felt unsettled. Now the container effects share gz-slow and only the
     // image deliberately trails behind it.
-    // transition-[...] rather than transition-all: transition-all also animates
-    // properties nothing here intends to change.
-    <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-[transform,box-shadow,border-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15 focus-within:-translate-y-1.5 focus-within:border-gz-navy/30 focus-within:shadow-xl focus-within:shadow-gz-navy/15 active:translate-y-0 active:gz-fast">
+    // transition-[...] rather than transition-all, which also animates
+    // properties nothing here intends to change. `translate` has to be listed
+    // explicitly: Tailwind v4 compiles -translate-y-* to the standalone
+    // `translate` property, not to `transform`, so a list naming only
+    // `transform` silently leaves the lift un-animated.
+    <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-[transform,translate,box-shadow,border-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15 focus-within:-translate-y-1.5 focus-within:border-gz-navy/30 focus-within:shadow-xl focus-within:shadow-gz-navy/15 active:translate-y-0 active:gz-fast">
       <Link
         href={`/jersey/${product.id}`}
         className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gz-navy"
@@ -43,7 +46,11 @@ export function JerseyCard({
             src={product.imageUrl}
             alt={product.name}
             fill
-            sizes="(max-width: 640px) 50vw, 25vw"
+            // Must track the grid: 2 columns, then 3 at sm, then 4 at lg. The
+            // middle step was missing, so between 640px and 1024px the browser
+            // was told 25vw while each card actually renders at about 33vw and
+            // it fetched an image a third too small to be sharp.
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="gz-card-img object-cover transition-transform gz-slower ease-gz-out"
           />
         )}
@@ -68,7 +75,7 @@ export function JerseyCard({
         )}
 
         {/* Quick-view overlay */}
-        <div className="gz-quick pointer-events-none absolute inset-x-2.5 bottom-2.5 translate-y-2.5 opacity-0 transition-[opacity,transform] gz-slow ease-gz-out">
+        <div className="gz-quick pointer-events-none absolute inset-x-2.5 bottom-2.5 translate-y-2.5 opacity-0 transition-[opacity,transform,translate] gz-slow ease-gz-out">
           <span className="block rounded-lg bg-gz-navy-deep/90 py-2 text-center text-[11px] font-extrabold uppercase tracking-wide text-white backdrop-blur-sm">
             View kit
           </span>

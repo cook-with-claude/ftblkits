@@ -33,7 +33,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning is required, not incidental: the inline script
+    // below sets data-reveal-ready on this element before React hydrates, so
+    // the client <html> legitimately carries an attribute the server markup did
+    // not. Without it React reports a hydration mismatch. It suppresses only
+    // this element's own attributes, not anything within the tree.
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Runs before first paint so reveal-on-scroll elements start hidden
             rather than painting once and then jumping. Gating the CSS on a flag
