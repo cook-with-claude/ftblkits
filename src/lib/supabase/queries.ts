@@ -20,11 +20,42 @@ import { CATALOG_TAG } from "@/lib/cache-tags";
 // layer's cache handler.
 const MAX_AGE_SECONDS = 300;
 
-function cached<Args extends unknown[], Result>(
+// Carries the caller's own "unavailable" value back out through the cache.
+// Throwing is the only way to stop unstable_cache from storing a result, and a
+// rejected promise is not cached — which is exactly the behaviour an outage
+// needs.
+class OutageSignal<Result> extends Error {
+  constructor(readonly result: Result) {
+    super("catalog unavailable");
+  }
+}
+
+function cached<Args extends unknown[], Result extends { status: string }>(
   key: string,
   fn: (...args: Args) => Promise<Result>,
 ) {
-  return unstable_cache(fn, [key], { revalidate: MAX_AGE_SECONDS, tags: [CATALOG_TAG] });
+  const inner = unstable_cache(
+    async (...args: Args) => {
+      const result = await fn(...args);
+      // An outage is a fact about right now, not about the data. Caching it
+      // would pin every reader to the error state for the full TTL — long
+      // after Supabase came back — and make the "Try again" button on the
+      // error boundary useless, which is the opposite of what it promises.
+      if (result.status === "unavailable") throw new OutageSignal(result);
+      return result;
+    },
+    [key],
+    { revalidate: MAX_AGE_SECONDS, tags: [CATALOG_TAG] },
+  );
+
+  return async (...args: Args): Promise<Result> => {
+    try {
+      return await inner(...args);
+    } catch (err) {
+      if (err instanceof OutageSignal) return err.result as Result;
+      throw err;
+    }
+  };
 }
 
 const COLUMNS =

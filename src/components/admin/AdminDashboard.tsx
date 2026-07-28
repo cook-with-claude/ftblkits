@@ -150,7 +150,11 @@ export function AdminDashboard() {
               onClick={logout}
               disabled={loggingOut}
               // min-w so the label swap does not resize the button mid-request.
-              className="flex min-w-[104px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy px-4 py-2 text-sm font-bold text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              // Sized for the *pending* label — "Logging out…" plus the spinner
+              // is the wider of the two states, and reserving only the idle
+              // width let the button grow and shove the header sideways at the
+              // exact moment it is meant to feel settled.
+              className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-navy px-4 py-2 text-sm font-bold text-white transition-opacity gz-base ease-gz-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loggingOut && <Spinner />}
               {loggingOut ? "Logging out…" : "Log out"}
