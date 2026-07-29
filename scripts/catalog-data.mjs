@@ -6,12 +6,21 @@
 // idempotent, so re-running only adds what is missing -- it never duplicates a
 // kit and never overwrites a price, photo or stock flag set from /admin.
 //
+// Note the two dates are deliberately different: these are the clubs competing
+// in 2026/27, but the shirts on sale are the 25/26 strips, because that is the
+// newest the supplier stocks. See SEASON_SECTION below.
+//
 // UCL_CLUBS / UEL_CLUBS are the confirmed league-phase qualifiers. They are a
 // second tag on top of a club's domestic league, because `products.sections` is
 // an array -- an Arsenal shirt sits in club-kits, premier-league AND
 // champions-league at once.
 
-export const SEASON_SECTION = "26-27-kits";
+// The season the *shirts* belong to, which is not the same as the season the
+// leagues are playing. The supplier's newest stock is 25/26, so that is what a
+// customer actually receives; labelling these 26/27 would misdescribe the goods.
+// Bump this to "26-27-kits" once the supplier's 26/27 photos exist -- and
+// rename the matching `sections` row in Supabase at the same time.
+export const SEASON_SECTION = "25-26-kits";
 
 // Both shirts every club sells. Add "Third" here to widen the whole catalog in
 // one edit -- the seeder will pick up the new variant for every club.
