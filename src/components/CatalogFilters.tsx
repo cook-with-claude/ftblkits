@@ -6,6 +6,13 @@ import type { Product } from "@/lib/types";
 import { buildCatalogFilterUrl, filterProducts, sortProducts, listTeams } from "@/lib/catalog";
 import { JerseyCard } from "./JerseyCard";
 
+// Past this many clubs the chip row stops being a shortcut: it wraps into a wall
+// of pills that pushes the kits themselves below the fold, which is the opposite
+// of a filter. The widest section that still reads well is the Champions League
+// at 21 clubs; the season and club sections carry 85 and are the reason for the
+// cap. The search box matches team names either way, so nothing is lost.
+const MAX_TEAM_CHIPS = 24;
+
 // Search + team + in-stock filtering over a list the server already scoped
 // (all kits, or one section's kits).
 //
@@ -32,6 +39,7 @@ export function CatalogFilters({
   const [inStockOnly, setInStockOnly] = useState(() => searchParams.get("stock") === "1");
 
   const teams = useMemo(() => listTeams(products), [products]);
+  const teamChips = showTeams && teams.length > 1 && teams.length <= MAX_TEAM_CHIPS;
   const sorted = useMemo(() => sortProducts(products), [products]);
   const visible = useMemo(
     () => filterProducts(sorted, { query, team, inStockOnly }),
@@ -109,7 +117,7 @@ export function CatalogFilters({
         </button>
       </div>
 
-      {showTeams && teams.length > 1 && (
+      {teamChips && (
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
