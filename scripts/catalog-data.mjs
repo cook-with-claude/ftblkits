@@ -22,6 +22,11 @@
 // rename the matching `sections` row in Supabase at the same time.
 export const SEASON_SECTION = "25-26-kits";
 
+// The same season in prose, for the per-kit description. Kept beside the section
+// slug so the two can never disagree -- a listing whose blurb says one season
+// while its section says another is a misdescription, not a cosmetic slip.
+export const SEASON_LABEL = "25/26";
+
 // Both shirts every club sells. Add "Third" here to widen the whole catalog in
 // one edit -- the seeder will pick up the new variant for every club.
 export const KIT_VARIANTS = ["Home", "Away"];
