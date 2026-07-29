@@ -52,11 +52,15 @@ export function CatalogFiltersSkeleton({ chips = 6 }: { chips?: number }) {
         <Skeleton className="h-[50px] flex-1 rounded-xl" />
         <Skeleton className="h-[50px] w-full rounded-xl sm:w-32" />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {Array.from({ length: chips }, (_, i) => (
-          <Skeleton key={i} className={`h-11 rounded-full ${CHIP_WIDTHS[i % CHIP_WIDTHS.length]}`} />
-        ))}
-      </div>
+      {/* Skipped entirely rather than rendered empty: the row's own top margin
+          would otherwise reserve space the real page never uses. */}
+      {chips > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {Array.from({ length: chips }, (_, i) => (
+            <Skeleton key={i} className={`h-11 rounded-full ${CHIP_WIDTHS[i % CHIP_WIDTHS.length]}`} />
+          ))}
+        </div>
+      )}
       <div className="mt-4">
         <Skeleton className="h-4 w-20" />
       </div>

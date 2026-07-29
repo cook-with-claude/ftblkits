@@ -43,7 +43,11 @@ export default async function AllKitsPage() {
       </p>
 
       <div className="mt-6">
-        <CatalogFilters products={products} />
+        {/* No team chips here. Across the whole catalogue that list runs to
+            every club we stock and dwarfs the kits themselves; the search box
+            already matches on team name. Section pages keep their chips, where
+            the list is short enough to scan. */}
+        <CatalogFilters products={products} showTeams={false} />
       </div>
 
       {sections.length > 0 && (

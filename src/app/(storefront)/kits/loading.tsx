@@ -13,7 +13,8 @@ export default function Loading() {
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8">
       <PageHeadingSkeleton />
       <div className="mt-6">
-        <CatalogFiltersSkeleton />
+        {/* Matches the real page, which hides team chips across all kits. */}
+        <CatalogFiltersSkeleton chips={0} />
         <div className="mt-4">
           <KitGridSkeleton count={8} />
         </div>
