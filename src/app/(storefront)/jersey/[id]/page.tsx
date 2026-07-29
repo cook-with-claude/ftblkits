@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { SizePicker } from "@/components/SizePicker";
 import { MysteryVisual } from "@/components/MysteryVisual";
 import { getProductById } from "@/lib/supabase/queries";
-import { mysteryKitDescription } from "@/lib/mystery";
+import { getMysteryProductMeta, mysteryKitDescription } from "@/lib/mystery";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export async function generateMetadata({
   const title = `${product.name} — $${product.price}`;
   return {
     title,
+    description: product.description ?? undefined,
     alternates: { canonical: `/jersey/${product.id}` },
     openGraph: { title, images: product.imageUrl ? [product.imageUrl] : ["/logo.jpeg"] },
   };
@@ -39,18 +40,19 @@ export default async function JerseyPage({
     throw new Error("The live catalog is temporarily unavailable");
   }
   const product = result.product;
+  const mysteryMeta = product.isMystery ? getMysteryProductMeta(product) : null;
 
   return (
     <div className="pb-28">
       <div className="mx-auto max-w-6xl px-4">
         <Link
-          href="/kits"
+          href={product.isMystery ? "/kits/mystery-boxes" : "/kits"}
           className="mt-5 inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-gz-navy transition-colors gz-base ease-gz-out hover:text-gz-red"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          All kits
+          {product.isMystery ? "Mystery boxes" : "All kits"}
         </Link>
 
         <div className="mt-4 grid gap-8 md:grid-cols-2 md:items-start">
@@ -60,7 +62,7 @@ export default async function JerseyPage({
             }`}
           >
             {product.isMystery ? (
-              <MysteryVisual size="detail" />
+              <MysteryVisual product={product} size="detail" />
             ) : (
               product.imageUrl && (
                 <Image
@@ -88,7 +90,7 @@ export default async function JerseyPage({
                 product.isMystery ? "text-gz-magenta" : "text-gz-red"
               }`}
             >
-              {product.isMystery ? "Mystery Kit" : product.team}
+              {mysteryMeta?.eyebrow ?? product.team}
             </p>
             <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl uppercase leading-none text-gz-navy sm:text-4xl">
               {product.name}
@@ -102,25 +104,38 @@ export default async function JerseyPage({
 
             {(product.isMystery || product.description) && (
               <p className="mt-4 text-sm leading-relaxed text-gz-body">
-                {product.isMystery ? mysteryKitDescription() : product.description}
+                {product.isMystery ? mysteryKitDescription(product) : product.description}
               </p>
             )}
 
             {product.isMystery && (
-              <ol className="mt-5 space-y-2.5">
-                {[
-                  "Pick your size below.",
-                  "Order on WhatsApp — pay cash on delivery.",
-                  "We hand-pick an in-stock kit and surprise you.",
-                ].map((step, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-gz-body">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gz-magenta text-xs font-extrabold text-white">
-                      {i + 1}
+              <>
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  {["Replica kit", "Your size", "Surprise pick"].map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-xl border border-gz-border bg-gz-bg-alt px-2 py-2.5 text-center text-[10px] font-extrabold uppercase tracking-wide text-gz-navy sm:text-xs"
+                    >
+                      {item}
                     </span>
-                    {step}
-                  </li>
-                ))}
-              </ol>
+                  ))}
+                </div>
+
+                <ol className="mt-5 space-y-2.5">
+                  {[
+                    "Choose your size below.",
+                    "Add an optional team or style preference.",
+                    "We hand-pick a matching in-stock kit and keep it secret.",
+                  ].map((step, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-gz-body">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gz-magenta text-xs font-extrabold text-white">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </>
             )}
 
             <SizePicker product={product} />

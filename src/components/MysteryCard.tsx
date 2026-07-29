@@ -1,18 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { isSoldOut } from "@/lib/catalog";
-import { mysteryKitDescription } from "@/lib/mystery";
+import { getMysteryProductMeta } from "@/lib/mystery";
 
-// Scattered twinkling sparkles over the mystery card header.
-const SPARKLES = [
-  { top: "26%", left: "18%", size: "12px", color: "#EC1E5C", delay: "0s" },
-  { top: "20%", right: "22%", size: "9px", color: "#fff", delay: "0.5s" },
-  { bottom: "24%", right: "26%", size: "13px", color: "#EC1E5C", delay: "0.9s" },
-];
-
-// A mystery "tier" card. Lives inside the dark Mystery Kits panel: a glassy translucent
-// body with a gradient header holding a floating "?" and sparkles, distinct from the
-// white JerseyCard used in the main kit grid.
 export function MysteryCard({
   product,
   headingLevel = "h3",
@@ -21,38 +12,43 @@ export function MysteryCard({
   headingLevel?: "h2" | "h3";
 }) {
   const soldOut = isSoldOut(product);
-  const tagline = mysteryKitDescription();
+  const meta = getMysteryProductMeta(product);
   const Heading = headingLevel;
 
   return (
     <Link
       href={`/jersey/${product.id}`}
-      className="group relative block cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.05] transition-[transform,translate,border-color,background-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-magenta hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-magenta active:translate-y-0 active:gz-fast"
+      aria-label={`Open ${product.name}`}
+      className="group relative block min-w-0 cursor-pointer overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.07] shadow-[0_18px_44px_-30px_rgba(0,0,0,0.9)] transition-[transform,translate,border-color,background-color,box-shadow] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-white/45 hover:bg-white/[0.11] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-0 active:gz-fast"
     >
-      <div
-        className="relative h-40 overflow-hidden"
-        style={{ background: "radial-gradient(130% 130% at 30% 12%, #3a1450, #15206b 72%)" }}
-      >
-        {SPARKLES.map((s, i) => (
-          <span
-            key={i}
-            className="gz-twinkle absolute font-[family-name:var(--font-display)]"
-            style={{
-              top: s.top,
-              left: s.left,
-              right: s.right,
-              bottom: s.bottom,
-              fontSize: s.size,
-              color: s.color,
-              animationDelay: s.delay,
-            }}
-            aria-hidden="true"
-          >
-            ✦
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#f6f5f3]">
+        {product.imageUrl ? (
+          <Image
+            src={product.imageUrl}
+            alt={`${meta.shortName} mystery football kit box`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform gz-slower ease-gz-out group-hover:scale-[1.035] group-focus-visible:scale-[1.035]"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gz-navy-deep via-gz-navy to-[#3a1450]" />
+        )}
+
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gz-navy-deep/70 via-transparent to-transparent"
+          aria-hidden="true"
+        />
+        <span
+          className="absolute left-3 top-3 rounded-full border border-white/25 bg-gz-navy-deep/75 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.14em] text-white backdrop-blur-sm"
+          style={{ boxShadow: `inset 3px 0 0 ${meta.accent}` }}
+        >
+          {meta.eyebrow}
+        </span>
+        <span className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white">
+          <span>{meta.promise}</span>
+          <span className="shrink-0 transition-transform gz-base ease-gz-out group-hover:translate-x-0.5">
+            View →
           </span>
-        ))}
-        <span className="gz-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-[family-name:var(--font-display)] text-[86px] leading-none text-white/90">
-          ?
         </span>
 
         {soldOut && (
@@ -64,22 +60,24 @@ export function MysteryCard({
         )}
       </div>
 
-      <div className="flex items-end justify-between gap-3 p-4">
-        <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-wide text-gz-magenta">
-            Mystery Kit
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-gz-magenta">
+              Mystery Kit
+            </p>
+            <Heading className="mt-1.5 font-[family-name:var(--font-display)] text-lg uppercase leading-none text-white">
+              {meta.shortName}
+            </Heading>
+          </div>
+          <p className="shrink-0 font-[family-name:var(--font-display)] text-2xl leading-none text-white">
+            ${product.price.toFixed(2)}
           </p>
-          <Heading className="mt-1.5 font-[family-name:var(--font-display)] text-lg uppercase leading-none text-white">
-            {product.name}
-          </Heading>
-          <p className="mt-1.5 text-xs leading-snug text-white/60">{tagline}</p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="font-[family-name:var(--font-display)] text-[27px] leading-none text-white">
-            ${product.price}
-          </p>
-          <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-gz-magenta transition-transform gz-base ease-gz-out group-hover:translate-x-0.5">
-            Open →
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <span className="text-[11px] font-semibold text-white/65">Pick your size. We pick the kit.</span>
+          <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide text-white/75">
+            {product.sizes.length} sizes
           </span>
         </div>
       </div>

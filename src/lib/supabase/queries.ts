@@ -5,6 +5,13 @@ import type { Product } from "@/lib/types";
 import { isUuid } from "@/lib/ids";
 import { isValidSectionSlug, type NavGroup, type Section } from "@/lib/sections";
 import { CATALOG_TAG } from "@/lib/cache-tags";
+import {
+  getMysteryProduct,
+  getMysteryProductsInSection,
+  getMysterySection,
+  MYSTERY_PRODUCTS,
+  MYSTERY_SECTIONS,
+} from "@/lib/mystery";
 
 // Every storefront page is force-dynamic, so before this each navigation paid
 // for a fresh Supabase round trip — the dominant and most variable part of the
@@ -284,11 +291,70 @@ export {
   fetchLatestProducts,
 };
 
-export const getAllProducts = cache(cached("all-products", fetchAllProducts));
-export const getProductById = cache(cached("product-by-id", fetchProductById));
-export const getSections = cache(cached("sections", fetchSections));
-export const getSectionBySlug = cache(cached("section-by-slug", fetchSectionBySlug));
-export const getProductsInSection = cache(cached("products-in-section", fetchProductsInSection));
+const getDatabaseProducts = cache(cached("all-products", fetchAllProducts));
+const getDatabaseProductById = cache(cached("product-by-id", fetchProductById));
+const getDatabaseSections = cache(cached("sections", fetchSections));
+const getDatabaseSectionBySlug = cache(cached("section-by-slug", fetchSectionBySlug));
+const getDatabaseProductsInSection = cache(cached("products-in-section", fetchProductsInSection));
+
+function withMysteryProducts(products: Product[]): Product[] {
+  // The old database tier was a single generic placeholder. Keep normal live
+  // stock, but let the complete local editorial collection be the one source of
+  // truth for mystery cards so no duplicate generic box leaks into the UI.
+  return [...products.filter((product) => !product.isMystery), ...MYSTERY_PRODUCTS];
+}
+
+function withMysterySections(sections: Section[]): Section[] {
+  const bySlug = new Map(sections.map((section) => [section.slug, section]));
+  for (const fallback of MYSTERY_SECTIONS) {
+    // Prefer admin-managed wording when it exists; only fill missing shells.
+    if (!bySlug.has(fallback.slug)) bySlug.set(fallback.slug, fallback);
+  }
+  return [...bySlug.values()].sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label),
+  );
+}
+
+export const getAllProducts = cache(async (): Promise<CatalogResult> => {
+  const result = await getDatabaseProducts();
+  return result.status === "ok"
+    ? { status: "ok", products: withMysteryProducts(result.products) }
+    : result;
+});
+
+export const getProductById = cache(async (id: string): Promise<ProductResult> => {
+  const local = getMysteryProduct(id);
+  return local ? { status: "ok", product: local } : getDatabaseProductById(id);
+});
+
+export const getSections = cache(async (): Promise<SectionsResult> => {
+  const result = await getDatabaseSections();
+  // The Mystery Boxes navigation remains useful during a catalog outage because
+  // every product and route in this collection is local.
+  return result.status === "ok"
+    ? { status: "ok", sections: withMysterySections(result.sections) }
+    : { status: "ok", sections: MYSTERY_SECTIONS };
+});
+
+export const getSectionBySlug = cache(async (slug: string): Promise<SectionResult> => {
+  const local = getMysterySection(slug);
+  return local ? { status: "ok", section: local } : getDatabaseSectionBySlug(slug);
+});
+
+export const getProductsInSection = cache(async (slug: string): Promise<CatalogResult> => {
+  const local = getMysteryProductsInSection(slug);
+  const result = await getDatabaseProductsInSection(slug);
+
+  if (result.status === "unavailable") {
+    return local.length > 0 ? { status: "ok", products: local } : result;
+  }
+
+  return {
+    status: "ok",
+    products: [...result.products.filter((product) => !product.isMystery), ...local],
+  };
+});
+
 export const getLatestProducts = cache(cached("latest-products", fetchLatestProducts));
 
 // Deliberately uncached. This is the liveness probe behind /api/health — a

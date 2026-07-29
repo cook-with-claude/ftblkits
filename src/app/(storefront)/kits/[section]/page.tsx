@@ -5,7 +5,8 @@ import { CatalogFilters } from "@/components/CatalogFilters";
 import { MysteryCard } from "@/components/MysteryCard";
 import { getProductsInSection, getSectionBySlug } from "@/lib/supabase/queries";
 import { mysteryKits, regularKits } from "@/lib/catalog";
-import { sectionAccent } from "@/lib/sections";
+import { MYSTERY_SECTIONS } from "@/lib/mystery";
+import { sectionAccent, sectionHref } from "@/lib/sections";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,12 @@ export default async function SectionPage({
   const regular = regularKits(catalog.products);
   const mystery = mysteryKits(catalog.products);
   const accent = sectionAccent(section);
+  const mysteryGridClass =
+    mystery.length === 1
+      ? "mx-auto max-w-sm"
+      : mystery.length === 5
+        ? "sm:grid-cols-2 lg:grid-cols-3"
+        : "sm:grid-cols-2 lg:grid-cols-4";
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8">
@@ -82,11 +89,45 @@ export default async function SectionPage({
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-gz-body">{section.description}</p>
       )}
 
+      {section.navGroup === "mystery" && (
+        <nav
+          className="mt-6 flex gap-2 overflow-x-auto pb-1 gz-no-scrollbar"
+          aria-label="Mystery box collections"
+        >
+          {MYSTERY_SECTIONS.map((item) => {
+            const active = item.slug === section.slug;
+            return (
+              <Link
+                key={item.id}
+                href={sectionHref(item.slug)}
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-extrabold uppercase tracking-wide transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/30 ${
+                  active
+                    ? "border-gz-navy bg-gz-navy text-white"
+                    : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/35 hover:bg-gz-bg-alt"
+                }`}
+              >
+                {item.slug === "mystery-boxes"
+                  ? "All boxes"
+                  : item.label.replace(" Mystery Boxes", "")}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
       {mystery.length > 0 && (
-        <div className="mt-8 grid gap-4 rounded-[20px] bg-gradient-to-br from-gz-navy-deep via-gz-navy to-[#3a1450] p-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="relative mt-8 overflow-hidden rounded-[24px] bg-gradient-to-br from-gz-navy-deep via-gz-navy to-[#3a1450] p-4 sm:p-5">
+          <div
+            className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-gz-magenta/25 blur-3xl"
+            aria-hidden="true"
+          />
+          <div className={`relative grid gap-4 ${mysteryGridClass}`}>
           {mystery.map((kit) => (
             <MysteryCard key={kit.id} product={kit} headingLevel="h2" />
           ))}
+          </div>
+          <div className="gz-flagbar absolute inset-x-0 bottom-0 h-1" aria-hidden="true" />
         </div>
       )}
 
