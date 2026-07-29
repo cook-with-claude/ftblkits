@@ -82,8 +82,8 @@ export function cartTotal(lines: CartLine[]): number {
   return cents / 100;
 }
 
-// Whole dollars stay whole ($30, not $30.00); the mystery tier's $26.99 keeps
-// its cents.
+// Whole dollars stay whole ($40, not $40.00); priced tiers like $29.99 keep
+// their cents.
 export function formatPrice(value: number): string {
   return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
 }

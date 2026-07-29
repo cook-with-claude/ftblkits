@@ -142,7 +142,7 @@ source of truth for both scripts, so kit names and photo filenames cannot drift 
 
 ```bash
 npm run seed:catalog -- --dry-run       # what would be added
-npm run seed:catalog                    # add missing kits at $30, S–XXL
+npm run seed:catalog                    # add missing kits at $29.99, S–XXL
 npm run seed:catalog -- --sql           # print the INSERT instead (no credentials needed)
 ```
 
