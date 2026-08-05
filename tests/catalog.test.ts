@@ -6,6 +6,7 @@ import {
   listTeams,
   mysteryKits,
   regularKits,
+  shuffleCatalog,
   buildCatalogFilterUrl,
 } from "@/lib/catalog";
 import { isUuid } from "@/lib/ids";
@@ -149,5 +150,51 @@ describe("isUuid", () => {
   it("rejects malformed route params before they reach Supabase", () => {
     expect(isUuid("not-a-uuid")).toBe(false);
     expect(isUuid("692f94a4")).toBe(false);
+  });
+});
+
+describe("shuffleCatalog", () => {
+  // Mimics the real shape: one large batch imported after another, which is how
+  // the rows arrive from the database.
+  const batch = (prefix: string, n: number) =>
+    Array.from({ length: n }, (_, i) => make({ id: `${prefix}-${i}`, team: prefix }));
+  const clumped = [...batch("retro", 60), ...batch("season", 60)];
+
+  it("keeps every product exactly once", () => {
+    const out = shuffleCatalog(clumped);
+    expect(out).toHaveLength(clumped.length);
+    expect(new Set(out.map((p) => p.id))).toEqual(new Set(clumped.map((p) => p.id)));
+  });
+
+  it("does not mutate the input", () => {
+    const input = [...clumped];
+    shuffleCatalog(input);
+    expect(input.map((p) => p.id)).toEqual(clumped.map((p) => p.id));
+  });
+
+  it("returns the same order every time, so a revisit does not reshuffle", () => {
+    expect(shuffleCatalog(clumped).map((p) => p.id)).toEqual(
+      shuffleCatalog(clumped).map((p) => p.id),
+    );
+  });
+
+  it("is independent of the incoming order", () => {
+    expect(shuffleCatalog([...clumped].reverse()).map((p) => p.id)).toEqual(
+      shuffleCatalog(clumped).map((p) => p.id),
+    );
+  });
+
+  it("breaks up a batch instead of leaving it in one block", () => {
+    const out = shuffleCatalog(clumped);
+    let run = 1;
+    let longest = 1;
+    for (let i = 1; i < out.length; i++) {
+      run = out[i].team === out[i - 1].team ? run + 1 : 1;
+      longest = Math.max(longest, run);
+    }
+    // Un-shuffled this is 60. Interleaved batches leave only short runs.
+    expect(longest).toBeLessThan(10);
+    // And the first screenful is no longer one batch.
+    expect(new Set(out.slice(0, 12).map((p) => p.team)).size).toBe(2);
   });
 });

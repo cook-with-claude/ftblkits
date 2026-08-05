@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { SectionDirectory } from "@/components/SectionDirectory";
 import { getAllProducts, getSections } from "@/lib/supabase/queries";
-import { regularKits } from "@/lib/catalog";
+import { regularKits, shuffleCatalog } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,10 @@ export default async function AllKitsPage() {
     throw new Error("The live catalog is temporarily unavailable");
   }
 
-  const products = regularKits(catalog.products);
+  // Mixed rather than newest-first: this page shows the whole catalog, and by
+  // arrival order the most recent import fills the first several screens on its
+  // own. "New Arrivals" on the home page is where recency belongs.
+  const products = shuffleCatalog(regularKits(catalog.products));
   const sections = sectionsResult.sections;
 
   // Counted here rather than per-section-queried: we already hold the full
