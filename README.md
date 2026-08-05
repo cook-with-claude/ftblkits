@@ -210,3 +210,24 @@ claim the same kit. Pass `--keep-hidden` to stage a batch and reveal it from `/a
 
 > `docs/superpowers/` holds the original 2026-06-09 spec and plan. They describe an abandoned
 > **Sanity** architecture and are kept for history only — they do not reflect the current build.
+
+### Retro kits
+Retro is not generated the way the current season is. `buildCatalog()` is a cartesian
+product — every roster club times every variant — which works when you know in advance what
+should exist. Retro is the opposite: a "1997/98 Napoli Home" exists only if the supplier
+kept one. So the retro list is *discovered* by the scraper and seeded from its manifest.
+
+```bash
+npm run scrape:retro -- ./photos-retro --dry-run     # what retro stock exists
+npm run scrape:retro -- ./photos-retro --per-team 5  # download, N per team (default 5)
+npm run seed:retro   -- ./photos-retro --dry-run     # what would be added
+npm run seed:retro   -- ./photos-retro               # insert at $34.99, hidden
+npm run import:kit-images -- ./photos-retro          # attach photos and reveal
+```
+
+`scripts/retro-data.mjs` holds the vocabulary: the national-team list and their country
+sections, the retro price, and `normaliseSeason()` — which folds `97-98`, `1997-98` and
+`1997-1998` into one label so the same shirt is not listed three times. Two guards matter:
+`RETRO_LATEST_START_YEAR` keeps recent stock out (the supplier tags albums "25-26 … Retro"),
+and `FOUNDED` rejects a shirt older than the club that supposedly wore it — an Inter Milan
+shirt was titled "94-95 Inter Miami", a club founded in 2018.

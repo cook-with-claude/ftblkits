@@ -13,7 +13,9 @@
     "scrape:supplier": "node scripts/scrape-supplier.mjs",
     "scrape:protech": "node scripts/scrape-protech.mjs",
     "seed:catalog": "node scripts/seed-catalog.mjs",
-    "import:kit-images": "node scripts/import-kit-images.mjs"
+    "import:kit-images": "node scripts/import-kit-images.mjs",
+    "scrape:retro": "node scripts/scrape-retro.mjs",
+    "seed:retro": "node scripts/seed-retro.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
