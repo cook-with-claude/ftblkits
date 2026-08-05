@@ -118,7 +118,7 @@ an emergency-only option for the project owner.
 ### Sections tab
 - **Add a section:** name it, pick the menu group, and the URL fills itself in. It appears
   in the nav and gets its own page immediately.
-- **Stock a shell:** the leagues, Club Kits, Retro and 26/27 are already there as empty
+- **Stock a shell:** the leagues, Club Kits, Retro, 26/27 and 25/26 are already there as
   sections — an empty one renders a "check back soon" page until you tag kits into it.
 - **Reorder:** change the **Order** number — lower shows first within its group.
 - **Recolour:** set an accent to tint that section's header bar and card edge. Leave it
@@ -132,13 +132,50 @@ an emergency-only option for the project owner.
   and redeploy (it rarely changes).
 
 ## Bulk catalog tools (for the owner — terminal)
-Stocking 180 clubs by hand through `/admin` is a week of clicking. Two scripts do it in
-bulk; both need `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
+Stocking 180 clubs by hand through `/admin` is a week of clicking. Three scripts do it in
+bulk; the seed and import need `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
 
 `scripts/catalog-data.mjs` holds the club roster — the 2026/27 membership of all nine
-stocked leagues, plus the confirmed Champions/Europa League qualifiers. It is the single
-source of truth for both scripts, so kit names and photo filenames cannot drift apart.
-**When clubs are promoted or relegated, edit that file and re-run the seed.**
+stocked leagues, plus the confirmed Champions/Europa League qualifiers — and the season
+constants. It is the single source of truth for all three scripts, so kit names and photo
+filenames cannot drift apart. **When clubs are promoted or relegated, edit that file and
+re-run the seed.**
+
+The season is part of every kit's name and slug (`Arsenal 26/27 Home` →
+`arsenal-26-27-home.jpg`). That is what lets two seasons sit side by side: without it the
+seeder, which is idempotent on `(name, team)`, would skip every new kit as already-existing,
+and the importer, which uploads with `upsert: true`, would overwrite the previous season's
+live photo. **To roll to a new season, bump `SEASON_SECTION`, `SEASON_LABEL` and
+`SEASON_SLUG` together and add a migration seeding the new `sections` row.**
+
+```bash
+npm run scrape:supplier -- ./photos --dry-run   # what the supplier has, download nothing
+npm run scrape:supplier -- ./photos             # pull cover photos + _manifest.json
+npm run scrape:supplier -- ./photos --unmatched # album names that matched no roster club
+```
+
+There is a second supplier with a second script:
+
+```bash
+npm run scrape:protech -- ./photos-protech --dry-run    # what it stocks
+npm run scrape:protech -- ./photos-protech              # download
+npm run scrape:protech -- ./photos-protech --unmatched  # slugs matching no roster club
+```
+
+Protech Kit Zone is an OpenCart store whose product slug states club, season and variant
+outright (`liverpool-fc-26-27-home-shirt`), so it needs none of the defensive parsing the
+Yupoo album does, and its photos are consistent studio shots. It is much the smaller
+catalogue, but it covers clubs the Yupoo album has nothing for — Liverpool and Juventus
+among them. It skips `player-edition-`, `long-sleeve-`, `women-`, `youth-` and `mini-kit-`
+listings: those are different cuts or size runs from the S–XXL replica each kit advertises.
+
+The Yupoo scraper walks the supplier's album, keeps the albums for the current season, and
+saves each cover as `<kit-slug>.jpg` alongside a `_manifest.json` recording which album each
+photo came from. **Its titles cannot be trusted** — an album cleanly titled
+`26-27 Arsenal Home` routinely turns out to be a baby bodysuit or a kids shirt-and-shorts
+set, and roughly one in six is wrong. Review the photos before importing. To replace a bad
+pick, add its `albumId` to `_rejects.json`, delete the file and re-run: the next-best album
+for that kit is used instead.
 
 ```bash
 npm run seed:catalog -- --dry-run       # what would be added
@@ -151,17 +188,17 @@ a price, photo or stock flag set from `/admin`. **New kits are created hidden**,
 imageless kit renders as a blank navy square — a visible one would be a broken listing.
 
 ```bash
-npm run import:kit-images -- --list-names > expected.txt   # the 360 filenames to supply
+npm run import:kit-images -- --list-names > expected.txt   # every filename the importer wants
 npm run import:kit-images -- ./photos --dry-run            # check matching, upload nothing
 npm run import:kit-images -- ./photos                      # upload, link, and reveal
 ```
 
-The importer matches `arsenal-home.jpg` to the "Arsenal Home" kit, uploads it to the `kits`
-bucket and unhides that kit — so kits go live as their photos arrive, not all at once. It
-tolerates the usual supplier naming (`Real_Madrid_Away.jpg`, `psv-eindhoven-1st.jpg`,
-`alaves-away-shirt.jpg`, `dc-united-home (1).jpg`), sniffs magic bytes rather than trusting
-the extension, and refuses to guess when two files claim the same kit. Pass `--keep-hidden`
-to stage a batch and reveal it from `/admin` instead.
+The importer matches `arsenal-26-27-home.jpg` to the "Arsenal 26/27 Home" kit, uploads it to
+the `kits` bucket and unhides that kit — so kits go live as their photos arrive, not all at
+once. It tolerates the usual supplier naming (`Real_Madrid_26-27_Away.jpg`,
+`psv-eindhoven-26-27-1st.jpg`, `alaves-26-27-away-shirt.jpg`, `dc-united-26-27-home (1).jpg`),
+sniffs magic bytes rather than trusting the extension, and refuses to guess when two files
+claim the same kit. Pass `--keep-hidden` to stage a batch and reveal it from `/admin` instead.
 
 ## Docs
 - [`docs/launch-readiness.md`](docs/launch-readiness.md) — read before every production launch.

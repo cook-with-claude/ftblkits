@@ -6,30 +6,39 @@
 // idempotent, so re-running only adds what is missing -- it never duplicates a
 // kit and never overwrites a price, photo or stock flag set from /admin.
 //
-// Note the two dates are deliberately different: these are the clubs competing
-// in 2026/27, but the shirts on sale are the 25/26 strips, because that is the
-// newest the supplier stocks. See SEASON_SECTION below.
+// The clubs competing in 2026/27, now wearing the 26/27 strips -- the supplier
+// restocked in August 2026, so the two dates finally agree. See SEASON_SECTION.
 //
 // UCL_CLUBS / UEL_CLUBS are the confirmed league-phase qualifiers. They are a
 // second tag on top of a club's domestic league, because `products.sections` is
 // an array -- an Arsenal shirt sits in club-kits, premier-league AND
 // champions-league at once.
 
-// The season the *shirts* belong to, which is not the same as the season the
-// leagues are playing. The supplier's newest stock is 25/26, so that is what a
-// customer actually receives; labelling these 26/27 would misdescribe the goods.
-// Bump this to "26-27-kits" once the supplier's 26/27 photos exist -- and
-// rename the matching `sections` row in Supabase at the same time.
-export const SEASON_SECTION = "25-26-kits";
+// The season the *shirts* belong to. The supplier stocked nothing newer than
+// 25/26 until August 2026; it now carries a full 26/27 range, so this catalog
+// describes 26/27 goods. The 25/26 kits stay published alongside as their own
+// section -- rolling the season adds a season, it does not retire the old one.
+//
+// To roll this again: bump all three constants together and add a migration
+// seeding the new `sections` row (see 20260805..._add_26_27_season.sql). The
+// season is part of every kit's name and slug, so a new season inserts
+// alongside the old rather than colliding with it.
+export const SEASON_SECTION = "26-27-kits";
 
-// The same season in prose, for the per-kit description. Kept beside the section
-// slug so the two can never disagree -- a listing whose blurb says one season
-// while its section says another is a misdescription, not a cosmetic slip.
-export const SEASON_LABEL = "25/26";
+// The same season in prose, for the per-kit description and the kit name. Kept
+// beside the section slug so the two can never disagree -- a listing whose blurb
+// says one season while its section says another is a misdescription, not a
+// cosmetic slip.
+export const SEASON_LABEL = "26/27";
 
-// Both shirts every club sells. Add "Third" here to widen the whole catalog in
-// one edit -- the seeder will pick up the new variant for every club.
-export const KIT_VARIANTS = ["Home", "Away"];
+// The season in slug form. Separate from SEASON_LABEL only because a slug
+// cannot contain the slash, and both feed the same identity.
+export const SEASON_SLUG = "26-27";
+
+// The shirts every club sells. Third and Goalkeeper joined the list when the
+// supplier's 26/27 range turned out to carry them; a club with no photo for a
+// variant simply keeps that kit hidden, which is what hidden has always meant.
+export const KIT_VARIANTS = ["Home", "Away", "Third", "Goalkeeper"];
 
 export const LEAGUES = [
   {
@@ -316,7 +325,7 @@ export const UEL_CLUBS = [
 
 // Kit photos are matched to kits by filename, so the slug is a contract with
 // the image importer, not a cosmetic detail: `Brighton & Hove Albion` + `Home`
-// has to keep resolving to `brighton-hove-albion-home.jpg` across runs.
+// has to keep resolving to `brighton-hove-albion-26-27-home.jpg` across runs.
 // Accents are folded rather than dropped so `Alavés` and `Málaga` stay
 // typeable on a keyboard that has neither.
 export function slugify(value) {
@@ -330,6 +339,21 @@ export function slugify(value) {
     .replace(/\./g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+// The filename contract, in one place. The season is part of the slug so a
+// 26/27 shirt cannot overwrite the 25/26 photo already published at
+// `arsenal-home.jpg` -- the image importer uploads with upsert:true, so a
+// shared slug would silently replace a live listing's photo.
+export function kitSlug(club, variant) {
+  return `${slugify(club)}-${SEASON_SLUG}-${variant.toLowerCase()}`;
+}
+
+// Likewise the kit name carries the season, because the seeder is idempotent on
+// (team, name): without it every 26/27 kit would collide with its 25/26
+// namesake and be skipped as already-existing.
+export function kitName(club, variant) {
+  return `${club} ${SEASON_LABEL} ${variant}`;
 }
 
 // One flat list of every kit the catalog should contain. Both the seeder and
@@ -347,9 +371,10 @@ export function buildCatalog() {
 
       for (const variant of KIT_VARIANTS) {
         kits.push({
-          name: `${club} ${variant}`,
+          name: kitName(club, variant),
           team: club,
-          slug: `${slugify(club)}-${variant.toLowerCase()}`,
+          variant,
+          slug: kitSlug(club, variant),
           sections,
           league: league.label,
         });

@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "audit:launch": "node scripts/audit-launch.mjs",
+    "scrape:supplier": "node scripts/scrape-supplier.mjs",
+    "scrape:protech": "node scripts/scrape-protech.mjs",
     "seed:catalog": "node scripts/seed-catalog.mjs",
     "import:kit-images": "node scripts/import-kit-images.mjs"
   },

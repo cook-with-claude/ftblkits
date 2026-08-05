@@ -50,6 +50,10 @@ yarn-error.log*
 # Local DB snapshots taken before migrations
 backups/
 
+# Kit photos pulled from the supplier by `npm run scrape:supplier`. They are a
+# staging area on the way to the Supabase `kits` bucket, not source.
+photos-*/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
