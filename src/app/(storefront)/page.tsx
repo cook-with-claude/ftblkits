@@ -6,8 +6,11 @@ import { SectionDirectory } from "@/components/SectionDirectory";
 import { JerseyCard } from "@/components/JerseyCard";
 import { getLatestProducts, getProductsInSection, getSections } from "@/lib/supabase/queries";
 
-// Always read live from Supabase so stock/listing changes appear immediately.
-export const dynamic = "force-dynamic";
+// Stock and listing changes still appear immediately: an admin write purges
+// CATALOG_TAG, which drops this page's cached HTML along with the data behind
+// it. force-dynamic was doing that job by re-rendering for everyone, which is a
+// far more expensive way to get the same freshness.
+export const revalidate = 300;
 
 // Set per page rather than inherited from the root layout — see the comment in
 // src/app/layout.tsx.

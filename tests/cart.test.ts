@@ -9,6 +9,8 @@ import {
   buildCartMessage,
   parseCart,
   lineKey,
+  productUrl,
+  DELIVERY_PROMPT,
   MAX_LINE_QUANTITY,
   type CartLine,
 } from "@/lib/cart";
@@ -155,6 +157,30 @@ describe("buildCartMessage", () => {
 
   it("always states a total — the reason prices came back into the message", () => {
     expect(buildCartMessage([line()])).toMatch(/Total: \$\d/);
+  });
+
+  it("links every kit to its page, so the shop is not looking names up by hand", () => {
+    const msg = buildCartMessage([line({ id: "rm" }), line({ id: "fcb", size: "L" })]);
+    expect(msg).toContain(productUrl("rm"));
+    expect(msg).toContain(productUrl("fcb"));
+  });
+
+  it("keeps the link with its own kit, under the line it belongs to", () => {
+    const rows = buildCartMessage([line({ id: "rm", name: "Real Madrid Home" })]).split("\n");
+    const kitRow = rows.findIndex((r) => r.includes("Real Madrid Home"));
+    expect(rows[kitRow + 1].trim()).toBe(productUrl("rm"));
+  });
+
+  it("asks for the delivery details up front, once per order", () => {
+    const msg = buildCartMessage([line(), line({ size: "L" })]);
+    for (const field of DELIVERY_PROMPT) {
+      expect(msg.match(new RegExp(field, "g"))?.length).toBe(1);
+    }
+  });
+
+  it("puts the delivery block after the total, so the order reads first", () => {
+    const msg = buildCartMessage([line()]);
+    expect(msg.indexOf("Total:")).toBeLessThan(msg.indexOf("Name:"));
   });
 });
 

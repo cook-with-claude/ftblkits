@@ -3,10 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
-import { groupSections, sectionHref, type Section } from "@/lib/sections";
+import {
+  groupSections,
+  sectionHref,
+  NAV_GROUP_SHORT_LABELS,
+  type Section,
+} from "@/lib/sections";
 import { cartCount } from "@/lib/cart";
 import { lockBodyScroll, useDisclosureTransition } from "@/lib/motion";
 import { CART_TRIGGER_ATTR, openCart, useCart } from "./cart/useCart";
@@ -46,17 +51,35 @@ function ChevronIcon({ className }: { className?: string }) {
   );
 }
 
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4-4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// whitespace-nowrap was absent repo-wide, so every one of these could break
+// mid-label the moment the row ran out of room — and with nine top-level items
+// it always did. Padding and tracking are tighter than the rest of the app's
+// controls for the same reason: this row has to fit on one line.
 const linkBase =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40";
+  "inline-flex min-h-11 cursor-pointer items-center whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-bold uppercase transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy";
 const linkIdle = "text-gz-navy hover:bg-gz-bg-alt hover:text-gz-red";
 const linkActive = "bg-gz-bg-alt text-gz-red";
 
 export function Header({ sections = [] }: { sections?: Section[] }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
   const navRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // The panel itself is rendered by StorefrontShell, outside this header: the
   // header's backdrop-blur would otherwise clip a fixed-position overlay to its
@@ -82,7 +105,30 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
     setMenuPath(pathname);
     setOpenGroup(null);
     setDrawerOpen(false);
+    setSearchOpen(false);
   }
+
+  // There was no way to search from anywhere but a catalog page. CatalogFilters
+  // already seeds its state from `searchParams`, so /kits?q=… is a working
+  // destination with no extra wiring — this is only the way in.
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const q = searchQuery.trim();
+    router.push(q ? `/kits?q=${encodeURIComponent(q)}` : "/kits");
+    setSearchOpen(false);
+  };
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    searchInputRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setSearchOpen(false);
+      searchButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [searchOpen]);
 
   // Escape closes the open dropdown and returns focus to its trigger; a pointer
   // press outside just closes it.
@@ -141,14 +187,24 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
       {/* Brand tri-color motif */}
       <div className="gz-flagbar h-1 w-full" aria-hidden="true" />
 
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+      {/* Wider than the max-w-6xl the page content uses, deliberately. At 1152px
+          the bar left the nav about 880px for a row that wants well over
+          1200px, so eight of the nine items wrapped even on a 1920px screen.
+          The nav also waits for xl now rather than lg: below that the drawer is
+          the honest answer, and it was already built. */}
+      <div className="mx-auto flex max-w-[84rem] items-center justify-between gap-3 px-4 py-3">
         <Link href="/" aria-label="The Goal Zone home" className="flex min-h-11 items-center">
           <Image src="/logo.jpeg" alt="GoalZone" width={200} height={107} priority className="h-9 w-auto sm:h-11" />
         </Link>
 
         <nav
           ref={navRef}
-          className="hidden items-center gap-1 lg:flex"
+          // Measured at 908px against 947px of space at 1280 — it fits, but a
+          // long section label added from /admin could still outgrow that.
+          // min-w-0 plus overflow-x lets the row scroll in that case instead of
+          // pushing the page sideways; with the labels as they are it never
+          // engages.
+          className="hidden min-w-0 items-center gap-0.5 overflow-x-auto gz-no-scrollbar xl:flex"
           aria-label="Primary"
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -195,7 +251,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
                     isOpen || groupIsActive(group) ? linkActive : linkIdle
                   }`}
                 >
-                  {group.label}
+                  {NAV_GROUP_SHORT_LABELS[group.group]}
                   <ChevronIcon className={`h-3.5 w-3.5 transition-transform gz-base ease-gz-out ${isOpen ? "rotate-180" : ""}`} />
                 </button>
 
@@ -232,7 +288,21 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Search was reachable only from a catalog page, which is the one
+              place you are already able to filter. */}
+          <button
+            ref={searchButtonRef}
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-expanded={searchOpen}
+            aria-controls="header-search"
+            aria-label={searchOpen ? "Close search" : "Search kits"}
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
+          >
+            <SearchIcon className="h-5 w-5" />
+          </button>
+
           {/* Always visible, unlike the WhatsApp button: on a phone this is the
               only way back to the cart. */}
           <button
@@ -241,7 +311,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             onClick={openCart}
             aria-haspopup="dialog"
             aria-label={count > 0 ? `Open cart, ${count} ${count === 1 ? "kit" : "kits"}` : "Open cart, empty"}
-            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+            className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
           >
             <CartIcon className="h-5 w-5" />
             {count > 0 && (
@@ -254,14 +324,19 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             )}
           </button>
 
+          {/* Was hidden below 640px. The drawer and the footer both carry one,
+              but each costs an extra tap on the device most of this shop's
+              traffic arrives on. Icon-only on a phone, labelled once there is
+              room for the word. */}
           <a
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden min-h-11 cursor-pointer items-center gap-2 rounded-full bg-gz-whatsapp px-4 py-2 text-sm font-extrabold text-black transition-opacity gz-base ease-gz-out hover:opacity-90 sm:flex"
+            aria-label="Order on WhatsApp"
+            className="flex min-h-11 w-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-gz-whatsapp text-sm font-extrabold text-black transition-opacity gz-base ease-gz-out hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy sm:w-auto sm:px-4 sm:py-2"
           >
             <WhatsAppIcon className="h-4 w-4" />
-            Order
+            <span className="hidden sm:inline">Order</span>
           </a>
 
           <button
@@ -271,7 +346,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
             aria-expanded={drawerOpen}
             aria-controls="mobile-primary-navigation"
             aria-label={drawerOpen ? "Close menu" : "Open menu"}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt lg:hidden"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy xl:hidden"
           >
             {drawerOpen ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6" aria-hidden="true">
@@ -286,13 +361,46 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
         </div>
       </div>
 
+      {/* A row of its own rather than a field wedged into the bar: at 375px
+          there is no width for one, and on desktop the nav already owns the
+          middle. Submitting hands off to /kits, which does the actual work. */}
+      {searchOpen && (
+        <div className="border-t border-gz-border bg-gz-bg">
+          <form
+            id="header-search"
+            role="search"
+            onSubmit={submitSearch}
+            className="mx-auto flex max-w-[84rem] items-center gap-2 px-4 py-3"
+          >
+            <label htmlFor="header-search-input" className="sr-only">
+              Search kits
+            </label>
+            <input
+              ref={searchInputRef}
+              id="header-search-input"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search kits or teams…"
+              className="min-h-11 flex-1 rounded-xl border border-gz-border bg-gz-surface px-4 py-2 text-base text-gz-text placeholder:text-gz-muted focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy"
+            />
+            <button
+              type="submit"
+              className="min-h-11 cursor-pointer rounded-xl bg-gz-navy px-5 text-sm font-extrabold uppercase tracking-wide text-white transition-opacity gz-base ease-gz-out hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Mobile drawer. Groups use native <details> so they are keyboard- and
           screen-reader-accessible with no extra state to manage.
           Positioned absolutely against the sticky header so it floats over the
           page instead of displacing it. */}
       {drawer.mounted && (
         <div
-          className={`absolute inset-x-0 top-full h-screen bg-gz-navy-deep/40 transition-opacity gz-base ease-gz-out lg:hidden ${
+          className={`absolute inset-x-0 top-full h-screen bg-gz-navy-deep/40 transition-opacity gz-base ease-gz-out xl:hidden ${
             drawer.entered ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setDrawerOpen(false)}
@@ -302,7 +410,7 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
       {drawer.mounted && (
         <nav
           id="mobile-primary-navigation"
-          className={`absolute inset-x-0 top-full max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)] transition-[opacity,transform,translate] gz-base ease-gz-out lg:hidden ${
+          className={`absolute inset-x-0 top-full max-h-[80vh] overflow-y-auto border-t border-gz-border bg-gz-bg px-4 py-2 shadow-[0_24px_44px_-16px_rgba(0,0,0,0.28)] transition-[opacity,transform,translate] gz-base ease-gz-out xl:hidden ${
             drawer.entered ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
           }`}
           aria-label="Mobile"

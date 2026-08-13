@@ -13,14 +13,15 @@ import {
   MYSTERY_SECTIONS,
 } from "@/lib/mystery";
 
-// Every storefront page is force-dynamic, so before this each navigation paid
-// for a fresh Supabase round trip — the dominant and most variable part of the
+// Storefront pages were force-dynamic, so before this each navigation paid for
+// a fresh Supabase round trip — the dominant and most variable part of the
 // wait, especially while a free-tier project is resuming from auto-pause.
 //
-// unstable_cache uses the Data Cache, which is independent of route dynamism:
-// pages still render per-request (so nothing stale is ever served as HTML), but
-// the database work behind them is shared. Admin writes purge CATALOG_TAG, so
-// edits still appear immediately.
+// unstable_cache uses the Data Cache, which is independent of route dynamism,
+// so this shared the database work while every page still rendered per request.
+// Those pages now carry `revalidate` instead, which caches the render too; both
+// layers hang off CATALOG_TAG, so one admin purge drops the data and the HTML
+// built from it together.
 
 // A ceiling, not the mechanism. Tag purges are what keep the catalog fresh;
 // this only bounds staleness if a purge fails to propagate through the hosting

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Product } from "@/lib/types";
 import { OrderButton } from "./OrderButton";
+import { SizeChart } from "./SizeChart";
 
 const MAX_QTY = 99;
 
@@ -10,13 +11,33 @@ export function SizePicker({ product }: { product: Product }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const sizeRowRef = useRef<HTMLDivElement>(null);
+  // Everything a shopper buys with: the size row, the quantity stepper and the
+  // inline order buttons. Handed to OrderButton so the fixed mobile bar can
+  // stay away while any of it is on screen — watching only the buttons left a
+  // scroll band where the size pills had just appeared at the bottom of the
+  // viewport and the bar was sitting on top of them.
+  const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Handed to OrderButton so pressing an action with no size chosen scrolls the
+  // row into view and lands focus on the first pill — the answer to the prompt
+  // it announces, rather than just the prompt.
+  const requestSize = useCallback(() => {
+    const row = sizeRowRef.current;
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+  }, []);
 
   return (
-    <>
+    <div ref={controlsRef}>
       {product.sizes.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-gz-muted">Select size</h2>
-          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Select size">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xs font-extrabold uppercase tracking-widest text-gz-muted">Select size</h2>
+            <SizeChart sections={product.sections} />
+          </div>
+          <div ref={sizeRowRef} className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Select size">
             {product.sizes.map((size) => {
               const isSelected = selected === size;
               return (
@@ -96,7 +117,14 @@ export function SizePicker({ product }: { product: Product }) {
         </div>
       )}
 
-      <OrderButton product={product} selectedSize={selected} quantity={quantity} notes={notes} />
-    </>
+      <OrderButton
+        product={product}
+        selectedSize={selected}
+        quantity={quantity}
+        notes={notes}
+        onRequestSize={requestSize}
+        controlsRef={controlsRef}
+      />
+    </div>
   );
 }

@@ -13,8 +13,17 @@ Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · Supabase (Postgres) ·
 | `/` | Landing page: hero, section directory, mystery band, new arrivals |
 | `/kits` | Browse everything, with search / team / in-stock filters |
 | `/kits/[section]` | One section's kits, e.g. `/kits/la-liga` |
-| `/jersey/[id]` | Kit detail + size picker + WhatsApp order |
+| `/jersey/[id]` | Kit detail + size picker + size guide + WhatsApp order |
+| `/faq` `/about` `/contact` `/privacy` `/terms` | Information pages — delivery, exchanges, sizing |
 | `/admin` | Manage kits and sections |
+
+Storefront pages are cached HTML (`revalidate = 300`) rather than rendered per
+request. Freshness comes from the `CATALOG_TAG` purge an admin write triggers,
+which drops the cached data *and* the pages built from it; the five minutes is a
+ceiling in case a purge fails to propagate. `CatalogFilters` reads
+`useSearchParams`, which opts a route into dynamic rendering unless it sits under
+a Suspense boundary — that boundary is what lets `/kits` and `/kits/[section]`
+stay cached, so do not remove it.
 
 Storefront pages live in the `(storefront)` route group, whose layout fetches the section
 list for the shared header and footer. `/admin` and `/api` sit outside it.
@@ -73,11 +82,35 @@ Hidden rows and every write remain unavailable to the public key; admin writes u
 server-only service-role key after manager authentication. Because hidden sections are
 unreadable by the public key, requesting one returns a 404 with no application-level check.
 
-## Pending migration
+## Shop facts and sizing
+`src/lib/shop-info.ts` holds the delivery lead time, delivery cost, exchange window and the
+readable phone number. `src/lib/sizing.ts` holds the two size tables (current-season and
+retro are different cuts) and the "runs small" advice. **Edit these rather than the pages** —
+the product page, `/faq`, `/contact` and `/terms` all read from them, and the whole point is
+that they cannot drift into quoting three different delivery times.
+
+The size measurements are published typical figures for Asian replicas, clearly labelled
+approximate. Replace them with measured figures when a batch has actually been measured.
+
+## Pending migrations
 `supabase/migrations/PENDING_20260727140000_drop_country_column.sql.txt` drops the old
 `country` column and its sync trigger. **Run it only after the rebrand is deployed and
 verified in production** — see the header in that file. It is saved as `.sql.txt` so it is
 not applied by accident.
+
+Two data migrations were **applied to production on 2026-08-13**. Both are idempotent, so a
+re-run is a no-op:
+
+- `20260813104713_tag_retro_kits_into_leagues.sql` — 233 retro shirts gained the league
+  sections their modern counterparts already sit in. Before it, `retro-kits ∩ any league
+  section` was exactly 0, so all 368 retro kits were unreachable from any league page.
+  `/kits/premier-league` went from 67 kits to 124.
+- `20260813104738_backfill_25_26_season_into_names.sql` — inserted `25/26` into the 138 kit
+  names that predated the season-in-the-name convention. The 15 `world-cup-2026` national
+  shirts and the legacy mystery row were deliberately left alone; they have no season.
+
+After a data migration the storefront can serve stale HTML for up to five minutes unless the
+tag purge is triggered (any save in `/admin` does it).
 
 ## Local development
 1. `npm install`
@@ -99,7 +132,8 @@ image signatures, outage handling, configuration, and WhatsApp link building.
 ## Deploy (Netlify)
 1. Push to GitHub and connect the repository to Netlify.
 2. Add the env vars from `.env.example` (set `NEXT_PUBLIC_SITE_URL` to the production URL).
-3. Deploy. Pages render dynamically, so dashboard edits show up on the next page load.
+3. Deploy. Pages are cached, and an admin write purges them, so dashboard edits
+   show up on the next page load.
 
 ## Managing the catalog (for the team — no code)
 Managers use `/admin` after entering the shared password. Supabase Table Editor remains

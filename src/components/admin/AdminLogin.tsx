@@ -54,7 +54,7 @@ export function AdminLogin() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-gz-border bg-gz-bg px-4 py-3 text-base text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy/40"
+          className="mt-2 w-full rounded-xl border border-gz-border bg-gz-bg px-4 py-3 text-base text-gz-text focus:border-gz-navy focus:outline-none focus:ring-2 focus:ring-gz-navy"
           required
         />
 

@@ -4,6 +4,44 @@ import type { Product } from "@/lib/types";
 const DEFAULT_SIZES = ["S", "M", "L", "XL", "XXL"];
 const MYSTERY_PRICE = 26.99;
 
+// What a mystery box actually costs against buying the same shirt outright.
+// The saving was the entire commercial argument for the tier and it was never
+// stated anywhere: "One surprise top-flight club kit" was the complete
+// specification of a $26.99 purchase.
+const MODERN_KIT_PRICE = 29.99;
+const RETRO_KIT_PRICE = 34.99;
+
+export interface MysterySaving {
+  /** Dollars off the same shirt bought normally. */
+  amount: number;
+  /** Rounded percentage, for the themes where it is worth stating. */
+  percent: number;
+  comparedTo: number;
+}
+
+export function mysterySaving(theme: MysteryTheme): MysterySaving {
+  const comparedTo = theme === "retro" ? RETRO_KIT_PRICE : MODERN_KIT_PRICE;
+  const amount = Math.round((comparedTo - MYSTERY_PRICE) * 100) / 100;
+  return { amount, percent: Math.round((amount / comparedTo) * 100), comparedTo };
+}
+
+/**
+ * The three sentences a $26.99 blind purchase needs: what the pool is, what is
+ * promised, and what is ruled out. Stated once, rendered wherever a mystery box
+ * is described.
+ */
+export const MYSTERY_GUARANTEE =
+  "Always in the size you pick. If we cannot fill your size from the collection, we message you before anything ships rather than substituting one.";
+
+export const MYSTERY_EXCLUSION =
+  "Never a goalkeeper kit — those are a different shirt entirely, and nobody orders a surprise expecting one.";
+
+export function mysteryPoolLine(theme: MysteryTheme): string {
+  return theme === "retro"
+    ? "Picked from the retro shirts in stock right now — the same 368 classics you can browse under Retro Kits."
+    : "Picked from the kits in stock right now, in the collection you chose — the same shirts listed on the site, not overstock or seconds.";
+}
+
 export type MysteryTheme =
   | "premier-league"
   | "la-liga"

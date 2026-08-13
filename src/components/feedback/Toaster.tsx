@@ -34,7 +34,7 @@ export function Toaster() {
             type="button"
             onClick={() => dismissToast(t.id)}
             aria-label="Dismiss"
-            className="-m-1 shrink-0 cursor-pointer rounded p-1 text-gz-muted transition-colors gz-fast ease-gz-out hover:text-gz-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+            className="-m-1 shrink-0 cursor-pointer rounded p-1 text-gz-muted transition-colors gz-fast ease-gz-out hover:text-gz-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />

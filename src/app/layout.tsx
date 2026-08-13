@@ -26,6 +26,14 @@ export const metadata: Metadata = {
     type: "website",
     images: ["/logo.jpeg"],
   },
+  // Next replaces these per route rather than merging them, so this is the
+  // fallback for pages that declare neither — not a base the others build on.
+  twitter: {
+    card: "summary_large_image",
+    title: "The Goal Zone — Football Kits",
+    description: "Replica football kits in Beirut. Order on WhatsApp.",
+    images: ["/logo.jpeg"],
+  },
   verification: {
     google: "4DjHPNCVOoZJW8GClLr40jXPUyCM-zje_Xu9y7t957A",
   },

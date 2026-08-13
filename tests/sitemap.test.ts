@@ -14,11 +14,15 @@ vi.mock("@/lib/supabase/queries", () => ({
   getSections: mocks.getSections,
 }));
 
-import sitemap, { dynamic } from "@/app/sitemap";
+import sitemap, { revalidate } from "@/app/sitemap";
 
 describe("sitemap freshness", () => {
-  it("opts out of the metadata route's default cache", () => {
-    expect(dynamic).toBe("force-dynamic");
+  // Was force-dynamic, which re-queried the whole catalog for every crawler
+  // hit. Freshness after an admin edit comes from the CATALOG_TAG purge; this
+  // is only the ceiling if a purge fails to propagate, and it must stay in step
+  // with MAX_AGE_SECONDS in queries.ts.
+  it("bounds staleness rather than opting out of caching entirely", () => {
+    expect(revalidate).toBe(300);
   });
 
   function section(slug: string) {
@@ -81,11 +85,24 @@ describe("sitemap freshness", () => {
     expect(urls).not.toContain("https://goalzone.example/kits/mls");
   });
 
-  it("still lists the home and browse-all routes when nothing is stocked", async () => {
+  it("still lists the home, browse-all and information routes when nothing is stocked", async () => {
     mocks.getAllProducts.mockResolvedValueOnce({ status: "ok", products: [] });
     mocks.getSections.mockResolvedValueOnce({ status: "ok", sections: [section("mls")] });
 
     const urls = (await sitemap()).map((entry) => entry.url);
-    expect(urls).toEqual(["https://goalzone.example", "https://goalzone.example/kits"]);
+    // The information pages are static prose and do not depend on stock, so
+    // they belong here whatever the catalogue is doing. What must stay out is
+    // anything catalog-derived.
+    expect(urls).toEqual([
+      "https://goalzone.example",
+      "https://goalzone.example/kits",
+      "https://goalzone.example/faq",
+      "https://goalzone.example/about",
+      "https://goalzone.example/contact",
+      "https://goalzone.example/privacy",
+      "https://goalzone.example/terms",
+    ]);
+    expect(urls.some((url) => url.includes("/kits/"))).toBe(false);
+    expect(urls.some((url) => url.includes("/jersey/"))).toBe(false);
   });
 });

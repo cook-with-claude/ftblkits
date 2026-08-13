@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   isSoldOut,
+  isRetro,
+  hasBothEras,
   filterProducts,
   sortProducts,
   listTeams,
@@ -68,6 +70,40 @@ describe("filterProducts", () => {
   });
 });
 
+describe("era", () => {
+  const modern = make({ id: "now", name: "Arsenal 25/26 Home", sections: ["premier-league"] });
+  const retro = make({
+    id: "old",
+    name: "Arsenal 89/90 Home",
+    sections: ["premier-league", "retro-kits"],
+  });
+
+  it("reads retro membership off the sections already on the record", () => {
+    expect(isRetro(retro)).toBe(true);
+    expect(isRetro(modern)).toBe(false);
+  });
+
+  it("filters to one era at a time and lets 'all' through", () => {
+    const list = [modern, retro];
+    expect(filterProducts(list, { query: "", era: "retro" }).map((p) => p.id)).toEqual(["old"]);
+    expect(filterProducts(list, { query: "", era: "current" }).map((p) => p.id)).toEqual(["now"]);
+    expect(filterProducts(list, { query: "", era: "all" }).length).toBe(2);
+  });
+
+  it("defaults to showing both when no era is given", () => {
+    expect(filterProducts([modern, retro], { query: "" }).length).toBe(2);
+  });
+
+  // The chips are noise on a list that is entirely one era, which is every
+  // section page except the leagues once the retro shirts are tagged in.
+  it("only reports both eras when the list actually straddles them", () => {
+    expect(hasBothEras([modern, retro])).toBe(true);
+    expect(hasBothEras([retro, retro])).toBe(false);
+    expect(hasBothEras([modern])).toBe(false);
+    expect(hasBothEras([])).toBe(false);
+  });
+});
+
 describe("buildCatalogFilterUrl", () => {
   it("updates filters while preserving unrelated params and the fragment", () => {
     expect(
@@ -87,6 +123,25 @@ describe("buildCatalogFilterUrl", () => {
         { query: "", team: null, inStockOnly: false },
       ),
     ).toBe("/kits/la-liga");
+  });
+
+  it("carries era and sort", () => {
+    expect(
+      buildCatalogFilterUrl(
+        { pathname: "/kits", search: "", hash: "" },
+        { query: "", era: "retro", sort: "price-asc" },
+      ),
+    ).toBe("/kits?era=retro&sort=price-asc");
+  });
+
+  // A shared link should not carry params that change nothing.
+  it("leaves the defaults out of the URL and strips them when reset", () => {
+    expect(
+      buildCatalogFilterUrl(
+        { pathname: "/kits", search: "?era=retro&sort=name", hash: "" },
+        { query: "", era: "all", sort: "featured" },
+      ),
+    ).toBe("/kits");
   });
 });
 
@@ -122,6 +177,41 @@ describe("sortProducts", () => {
     const arr = [make({ id: "a", inStock: false }), make({ id: "b", inStock: true })];
     sortProducts(arr);
     expect(arr.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  const priced = [
+    make({ id: "mid", name: "Bravo", price: 30 }),
+    make({ id: "low", name: "Charlie", price: 20 }),
+    make({ id: "high", name: "Alpha", price: 40 }),
+  ];
+
+  it("sorts by price in both directions", () => {
+    expect(sortProducts(priced, "price-asc").map((p) => p.id)).toEqual(["low", "mid", "high"]);
+    expect(sortProducts(priced, "price-desc").map((p) => p.id)).toEqual(["high", "mid", "low"]);
+  });
+
+  it("sorts by name", () => {
+    expect(sortProducts(priced, "name").map((p) => p.id)).toEqual(["high", "mid", "low"]);
+  });
+
+  it("leaves the incoming order alone for featured and newest", () => {
+    expect(sortProducts(priced, "featured").map((p) => p.id)).toEqual(["mid", "low", "high"]);
+    expect(sortProducts(priced, "newest").map((p) => p.id)).toEqual(["mid", "low", "high"]);
+  });
+
+  // A sold-out kit at the top of a cheapest-first list is a worse result than
+  // the sort is a good one, so the grouping always wins.
+  it("keeps sold-out kits last whatever the sort", () => {
+    const list = [
+      make({ id: "cheap-gone", price: 5, inStock: false }),
+      make({ id: "dear-here", price: 90 }),
+      make({ id: "cheap-here", price: 10 }),
+    ];
+    expect(sortProducts(list, "price-asc").map((p) => p.id)).toEqual([
+      "cheap-here",
+      "dear-here",
+      "cheap-gone",
+    ]);
   });
 });
 

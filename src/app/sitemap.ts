@@ -3,8 +3,10 @@ import { SITE_URL } from "@/lib/config";
 import { getAllProducts, getSections } from "@/lib/supabase/queries";
 
 // Metadata route handlers are cached by default. The URLs are admin-managed, so
-// regenerate this route on request just like the storefront pages.
-export const dynamic = "force-dynamic";
+// this needs to follow an admin write — but a crawler asking for the sitemap is
+// not a reason to re-query the whole catalog, which force-dynamic made it. The
+// tag purge covers the freshness; this is the ceiling.
+export const revalidate = 300;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [catalog, sectionsResult] = await Promise.all([getAllProducts(), getSections()]);
@@ -37,6 +39,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // The information pages are static and rarely change, but /faq is the answer
+  // to "how long does delivery take" — a query people genuinely search for
+  // before they buy from a shop they do not know.
+  const infoUrls: MetadataRoute.Sitemap = ["/faq", "/about", "/contact", "/privacy", "/terms"].map(
+    (path) => ({
+      url: `${SITE_URL}${path}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: path === "/faq" ? 0.6 : 0.3,
+    }),
+  );
+
   return [
     {
       url: SITE_URL,
@@ -52,5 +66,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...sectionUrls,
     ...jerseyUrls,
+    ...infoUrls,
   ];
 }
