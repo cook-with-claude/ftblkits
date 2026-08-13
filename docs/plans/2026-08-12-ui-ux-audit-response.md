@@ -1,6 +1,30 @@
 # Response to the external UI/UX audit — verified plan
 
-**Status:** planned, not started. Written 2026-08-12.
+**Status:** built on branch `feat/audit-response`, 2026-08-13. Written 2026-08-12.
+
+> **Phases B, C, D and E are done and verified.** Phase A is written as two
+> migrations in `supabase/migrations/` but **deliberately not applied** — they
+> rewrite production rows, and no branch can insulate the shared database from
+> that. Applying them is a separate, explicit decision.
+>
+> Changes made to the plan while building it, and why:
+> - **`/kits` no longer shuffles server-side.** An explicit "Newest" sort has to
+>   be able to recover arrival order, which a shuffle applied before the filter
+>   panel had already destroyed. The mixing moved into `CatalogFilters` behind a
+>   `mixed` prop; the reason for mixing is unchanged.
+> - **Pagination is a "Show more" reveal, not numbered pages.** Filtering here is
+>   instant and local, so a page control would reset the grid on every keystroke.
+>   Same goal — 48 cards rendered instead of 687.
+> - **The nav moved from `lg:` to `xl:`.** Measured, the row is 908px wide against
+>   947px of space at 1280px. It cannot fit at 1024px at any padding, so below xl
+>   the drawer — which was already built — is the honest answer. Group labels are
+>   shortened for the header only (`NAV_GROUP_SHORT_LABELS`); `/admin` keeps the
+>   long forms.
+> - **Section pages are prerendered** via `generateStaticParams`, which the plan
+>   did not call for but which E2 made free.
+> - **The delivery answer is two weeks, not days.** Kits are ordered from the
+>   supplier in batches rather than per customer. Owner-confirmed 2026-08-13; it
+>   is now the first thing the product page says.
 **Source:** black-box UI/UX audit of production dated 2026-08-09, no repo access.
 **Scope agreed:** the verified P0 + P1 tier. Analytics excluded by owner decision.
 
