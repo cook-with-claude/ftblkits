@@ -20,7 +20,10 @@ import {
   PHONE_DISPLAY,
 } from "@/lib/shop-info";
 
-export const dynamic = "force-dynamic";
+// See the note on /kits. A kit page has no interactive server state at all —
+// the size picker, cart and order button are client-side — so re-rendering it
+// per request bought nothing that the tag purge does not already give.
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,

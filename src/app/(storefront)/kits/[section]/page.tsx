@@ -1,14 +1,34 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { MysteryCard } from "@/components/MysteryCard";
-import { getProductsInSection, getSectionBySlug } from "@/lib/supabase/queries";
+import {
+  CatalogFiltersSkeleton,
+  KitGridSkeleton,
+} from "@/components/skeletons/Skeleton";
+import { getProductsInSection, getSectionBySlug, getSections } from "@/lib/supabase/queries";
 import { mysteryKits, regularKits } from "@/lib/catalog";
 import { MYSTERY_SECTIONS } from "@/lib/mystery";
 import { sectionAccent, sectionHref } from "@/lib/sections";
 
-export const dynamic = "force-dynamic";
+// See the note on /kits: the data was already shared, only the render repeated.
+// Sections are admin-managed, and an admin write purges the same tag.
+export const revalidate = 300;
+
+// Without this the route is only ever rendered on demand, because Next cannot
+// know the slugs at build time. There are about thirty and they are the main
+// nav, so prerendering them is cheap and makes the common browse path a cache
+// hit from the first visitor.
+//
+// `dynamicParams` stays at its default of true: a section added from /admin
+// after a deploy is not in this list and must still render, not 404. An outage
+// here returns an empty list, which degrades to exactly the old behaviour.
+export async function generateStaticParams() {
+  const result = await getSections();
+  return result.sections.map((section) => ({ section: section.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -141,10 +161,24 @@ export default async function SectionPage({
 
       {regular.length > 0 ? (
         <div className="mt-8">
-          <CatalogFilters
-            products={regular}
-            emptyMessage={`No ${section.label} kits match — try another search.`}
-          />
+          {/* Required for `revalidate` above to take effect — CatalogFilters
+              reads useSearchParams, which forces dynamic rendering on any route
+              where it is not wrapped. */}
+          <Suspense
+            fallback={
+              <>
+                <CatalogFiltersSkeleton />
+                <div className="mt-4">
+                  <KitGridSkeleton count={8} />
+                </div>
+              </>
+            }
+          >
+            <CatalogFilters
+              products={regular}
+              emptyMessage={`No ${section.label} kits match — try another search.`}
+            />
+          </Suspense>
         </div>
       ) : (
         mystery.length === 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { Product } from "@/lib/types";
 import { buildCartMessage, type CartLine } from "@/lib/cart";
 import { buildWhatsappLink } from "@/lib/whatsapp";
@@ -93,6 +93,7 @@ export function OrderButton({
   quantity,
   notes,
   onRequestSize,
+  controlsRef,
 }: {
   product: Product;
   selectedSize: string | null;
@@ -100,6 +101,10 @@ export function OrderButton({
   notes: string;
   // Focuses and scrolls to the size row. Owned by SizePicker, which renders it.
   onRequestSize?: () => void;
+  // The whole buying block — size row, quantity, and the inline buttons below.
+  // The mobile bar stays away while any of it is visible. Falls back to
+  // watching just the buttons when no wrapper is supplied.
+  controlsRef?: RefObject<HTMLElement | null>;
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
@@ -107,11 +112,11 @@ export function OrderButton({
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // The inline copy is the real one. The fixed bar is mounted only while this
-  // has scrolled out of view, which is what stops it sitting over the size
-  // pills at scroll 0 — the whole point of the change.
+  // The inline copy is the real one. The fixed bar is mounted only while the
+  // buying controls have scrolled out of view, which is what stops it sitting
+  // over the size pills — the whole point of the change.
   const inlineRef = useRef<HTMLDivElement>(null);
-  const [inlineVisible, setInlineVisible] = useState(true);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   const soldOut = !product.inStock;
   // A kit saved from /admin with no sizes has nothing to pick, so prompting for
@@ -157,12 +162,12 @@ export function OrderButton({
   );
 
   useEffect(() => {
-    const el = inlineRef.current;
+    const el = controlsRef?.current ?? inlineRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => setInlineVisible(entry.isIntersecting));
+    const observer = new IntersectionObserver(([entry]) => setControlsVisible(entry.isIntersecting));
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [controlsRef]);
 
   // Deliberately does not open the panel: the point of a cart here is adding
   // several kits in a row, and a panel that reopens each time fights that.
@@ -189,24 +194,29 @@ export function OrderButton({
   return (
     <>
       <div ref={inlineRef} className="mt-6">
-        {/* Two slots, not one. A shared region means the "pick a size" prompt
-            and the add confirmation overwrite each other mid-announcement. */}
-        <div aria-live="assertive" className="min-h-5">
-          {hint && <p className="mb-2 text-sm font-bold text-gz-red">{hint}</p>}
-        </div>
-        <div aria-live="polite" className="min-h-5">
-          {added && (
-            <p className="mb-2 text-sm font-bold text-gz-green">
-              Added to cart ·{" "}
-              <button
-                type="button"
-                onClick={openCart}
-                className="cursor-pointer text-gz-navy underline hover:text-gz-red"
-              >
-                View cart
-              </button>
-            </p>
-          )}
+        {/* Two live regions, not one: a shared region means the "pick a size"
+            prompt and the add confirmation overwrite each other
+            mid-announcement. They share one reserved row because only ever one
+            of them has content — nesting keeps the space they hold open at a
+            single line rather than two. */}
+        <div className="min-h-5">
+          <div aria-live="assertive">
+            {hint && <p className="mb-2 text-sm font-bold text-gz-red">{hint}</p>}
+          </div>
+          <div aria-live="polite">
+            {added && (
+              <p className="mb-2 text-sm font-bold text-gz-green">
+                Added to cart ·{" "}
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className="cursor-pointer text-gz-navy underline hover:text-gz-red"
+                >
+                  View cart
+                </button>
+              </p>
+            )}
+          </div>
         </div>
 
         <OrderActions
@@ -221,7 +231,7 @@ export function OrderButton({
 
       {/* Phones only. On a desktop viewport the bar was permanently spending
           about 14% of the screen on two buttons the page already shows. */}
-      {!inlineVisible && (
+      {!controlsVisible && (
         <div
           className="fixed inset-x-0 bottom-0 border-t border-gz-border bg-gz-bg/95 px-4 pt-4 backdrop-blur md:hidden"
           style={{

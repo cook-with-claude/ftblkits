@@ -1,10 +1,19 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { SectionDirectory } from "@/components/SectionDirectory";
+import {
+  CatalogFiltersSkeleton,
+  KitGridSkeleton,
+} from "@/components/skeletons/Skeleton";
 import { getAllProducts, getSections } from "@/lib/supabase/queries";
 import { regularKits } from "@/lib/catalog";
 
-export const dynamic = "force-dynamic";
+// Was force-dynamic, which meant every visitor paid to re-render 687 cards even
+// though the data behind them was already shared through unstable_cache. The
+// same 5-minute ceiling as that cache, and the same admin tag purge, so an edit
+// still shows up on the next request rather than whenever the TTL lapses.
+export const revalidate = 300;
 
 // Set per page — the root layout deliberately has no canonical, so that new
 // routes don't self-canonicalize to the homepage.
@@ -72,7 +81,22 @@ export default async function AllKitsPage() {
             panel falls back to a <select> past its chip cap, so the facet
             exists without the wall of pills. Section pages keep their chips,
             where the list is short enough to scan. */}
-        <CatalogFilters products={products} mixed />
+        {/* The boundary is what makes the revalidate above take effect:
+            CatalogFilters calls useSearchParams, and a client component that
+            reads the query string opts its whole route into dynamic rendering
+            unless it sits under Suspense. */}
+        <Suspense
+          fallback={
+            <>
+              <CatalogFiltersSkeleton chips={0} />
+              <div className="mt-4">
+                <KitGridSkeleton count={8} />
+              </div>
+            </>
+          }
+        >
+          <CatalogFilters products={products} mixed />
+        </Suspense>
       </div>
 
       {sections.length > 0 && (

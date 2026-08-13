@@ -46,11 +46,15 @@ const CHIP_OFF = "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-na
 // Search + era + team + in-stock filtering, and sorting, over a list the server
 // already scoped (all kits, or one section's kits).
 //
-// State is local rather than routed. Every page here is force-dynamic, so
-// pushing a query param per keystroke via router.replace would mean a server
-// round-trip per character. Instead we filter instantly from local state and
-// mirror it into the URL with history.replaceState, which keeps the address bar
-// shareable without triggering a Next navigation.
+// State is local rather than routed: pushing a query param per keystroke via
+// router.replace would mean a server round-trip per character. Instead we
+// filter instantly from local state and mirror it into the URL with
+// history.replaceState, which keeps the address bar shareable without
+// triggering a Next navigation.
+//
+// The useSearchParams call below is also why every page rendering this must
+// wrap it in Suspense: without a boundary it opts the whole route into dynamic
+// rendering, which is precisely what those pages' `revalidate` is undoing.
 export function CatalogFilters({
   products,
   showTeams = true,

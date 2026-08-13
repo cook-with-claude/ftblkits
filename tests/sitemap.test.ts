@@ -14,11 +14,15 @@ vi.mock("@/lib/supabase/queries", () => ({
   getSections: mocks.getSections,
 }));
 
-import sitemap, { dynamic } from "@/app/sitemap";
+import sitemap, { revalidate } from "@/app/sitemap";
 
 describe("sitemap freshness", () => {
-  it("opts out of the metadata route's default cache", () => {
-    expect(dynamic).toBe("force-dynamic");
+  // Was force-dynamic, which re-queried the whole catalog for every crawler
+  // hit. Freshness after an admin edit comes from the CATALOG_TAG purge; this
+  // is only the ceiling if a purge fails to propagate, and it must stay in step
+  // with MAX_AGE_SECONDS in queries.ts.
+  it("bounds staleness rather than opting out of caching entirely", () => {
+    expect(revalidate).toBe(300);
   });
 
   function section(slug: string) {

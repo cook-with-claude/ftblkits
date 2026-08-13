@@ -18,9 +18,10 @@ const TRICKLE_MS = 220;
 /**
  * Top-of-page indeterminate progress bar.
  *
- * Every storefront route is force-dynamic, so a <Link> click is a server round
- * trip. `loading.tsx` covers the page area; this covers the gap before it, and
- * gives back/forward navigations feedback too.
+ * A <Link> click is still a server round trip — the storefront routes are
+ * cached rather than static, so a cold or expired entry renders on demand.
+ * `loading.tsx` covers the page area; this covers the gap before it, and gives
+ * back/forward navigations feedback too.
  *
  * Navigations are detected from the click rather than from a router event,
  * because the App Router exposes no navigation-start hook. Settlement is

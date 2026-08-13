@@ -199,7 +199,12 @@ export function Header({ sections = [] }: { sections?: Section[] }) {
 
         <nav
           ref={navRef}
-          className="hidden items-center gap-0.5 xl:flex"
+          // Measured at 908px against 947px of space at 1280 — it fits, but a
+          // long section label added from /admin could still outgrow that.
+          // min-w-0 plus overflow-x lets the row scroll in that case instead of
+          // pushing the page sideways; with the labels as they are it never
+          // engages.
+          className="hidden min-w-0 items-center gap-0.5 overflow-x-auto gz-no-scrollbar xl:flex"
           aria-label="Primary"
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {

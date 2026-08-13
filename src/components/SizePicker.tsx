@@ -12,6 +12,12 @@ export function SizePicker({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const sizeRowRef = useRef<HTMLDivElement>(null);
+  // Everything a shopper buys with: the size row, the quantity stepper and the
+  // inline order buttons. Handed to OrderButton so the fixed mobile bar can
+  // stay away while any of it is on screen — watching only the buttons left a
+  // scroll band where the size pills had just appeared at the bottom of the
+  // viewport and the bar was sitting on top of them.
+  const controlsRef = useRef<HTMLDivElement>(null);
 
   // Handed to OrderButton so pressing an action with no size chosen scrolls the
   // row into view and lands focus on the first pill — the answer to the prompt
@@ -24,7 +30,7 @@ export function SizePicker({ product }: { product: Product }) {
   }, []);
 
   return (
-    <>
+    <div ref={controlsRef}>
       {product.sizes.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between gap-3">
@@ -117,7 +123,8 @@ export function SizePicker({ product }: { product: Product }) {
         quantity={quantity}
         notes={notes}
         onRequestSize={requestSize}
+        controlsRef={controlsRef}
       />
-    </>
+    </div>
   );
 }
