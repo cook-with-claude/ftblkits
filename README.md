@@ -135,6 +135,20 @@ image signatures, outage handling, configuration, and WhatsApp link building.
 3. Deploy. Pages are cached, and an admin write purges them, so dashboard edits
    show up on the next page load.
 
+> **As of 2026-08-13 `master` is ahead of production.** The UI/UX audit response is merged
+> but not deployed: the Netlify team is on the Free plan and is out of **build minutes**
+> (300/month, shown under Usage; the cycle appears to roll on the 20th). The last published
+> deploy is 2026-08-05, commit `866af70`.
+>
+> To check whether the new build is live: `/faq` returns **200** if it is, **404** if not.
+>
+> To deploy without spending build minutes, build locally and upload the output — Netlify
+> only meters builds run on its own infrastructure:
+> `npm run build && npx netlify-cli deploy --prod --no-build`.
+>
+> See `docs/session-log.md` (2026-08-13, §0 and §6) for the full picture and the
+> post-deploy checklist.
+
 ## Managing the catalog (for the team — no code)
 Managers use `/admin` after entering the shared password. Supabase Table Editor remains
 an emergency-only option for the project owner.

@@ -4,6 +4,234 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-08-13 — UI/UX audit response built, merged and applied. **Awaiting Netlify build minutes.**
+
+**Participants:** Nadim (owner) + Claude Code (Opus 5)
+**Branch:** `feat/audit-response` — merged to `master` as `4d7aace`, branch deleted.
+**Database:** both data migrations **applied to production**.
+**Deploy:** ❌ **not deployed.** Netlify is out of build minutes. See §6 — this is the
+only thing standing between the repo and a fully live site.
+
+### 0. Resume here on ~20 Aug
+
+Everything is committed, pushed and verified. Nothing is half-finished in the code. The
+single remaining action is to get Netlify to build `master`:
+
+1. Check **app.netlify.com/teams/abdulmalaknadim → Billing / Usage** and confirm build
+   minutes have reset (Free tier = 300/month; the cycle appears to roll on the 20th).
+2. Trigger a deploy — a push, or "Trigger deploy" in the dashboard.
+3. Verify it actually landed: `curl -o /dev/null -w "%{http_code}" https://the-goal-zone-kits.netlify.app/faq`
+   must return **200**. It returns 404 today; `/faq` exists only in the new code, which
+   makes it the cleanest tell that the new build is live.
+4. Then walk §7's post-deploy checks.
+
+If the minutes have not reset and you want it live sooner, §6 has a route that consumes
+**no** build minutes at all.
+
+### 1. What this was
+
+A friend produced a black-box UI/UX audit of production on 2026-08-09. It was verified
+claim-by-claim against source and the live database on 08-12 (that session), and the
+resulting plan lives in `docs/plans/2026-08-12-ui-ux-audit-response.md`. This session
+built it. The plan doc carries a status header listing every deviation and why.
+
+The audit's data findings were near-perfect and all confirmed exact. Three things about it
+are worth not re-litigating: its **source-level counts are inflated ~10x** (rendered-DOM
+counts across a 687-card page, not code counts); its **P0-2 is simply wrong** (add-to-cart
+was never silent); and it filed **per-product OG/Twitter tags under *working well*** when
+that was actually a gap.
+
+### 2. Data — applied to production
+
+Two migrations, both idempotent, both verified read-only before running and re-verified
+after. Filenames match the versions Supabase actually recorded, so a future `db push` sees
+them as applied rather than re-running them.
+
+| | before | after | predicted |
+|---|---|---|---|
+| `retro-kits` ∩ any of 11 league sections | 0 | **233** | 233 |
+| `/kits/premier-league` | 67 | **124** | 124 |
+| names with no season | 154 | **16** | 16 |
+
+- `20260813104713_tag_retro_kits_into_leagues.sql` — joins each retro kit's `team` to the
+  league slugs its *modern* counterparts already sit in. Four clubs with retro stock but no
+  modern counterpart are mapped by hand (Auxerre/Monaco/Strasbourg → `ligue-1`,
+  FC Dallas → `mls`). Restricted to non-retro rows so a re-run cannot feed its own output
+  back in and widen the mapping.
+- `20260813104738_backfill_25_26_season_into_names.sql` — inserts `25/26` into the 138
+  names that predated the convention. The `name !~ '[0-9]'` test is both the selector and
+  the re-run guard.
+
+Integrity after: max 4 section slugs per row (trigger cap is 12), zero duplicate slugs,
+zero double-inserted seasons, zero duplicate `(name, team)` pairs, 687 rows still visible,
+and the 40 retro∩country memberships untouched. The 16 remaining seasonless names are the
+15 `world-cup-2026` shirts plus the legacy mystery row — correct as-is.
+
+**Rollback, if ever needed:** strip **only the 11 league slugs** from retro rows. The
+obvious inverse — resetting to `{retro-kits, club-kits}` — looks right and is wrong: it
+would silently delete those 40 country memberships. Exact SQL for both migrations was
+written *before* applying them and is reproduced in §8.
+
+### 3. What shipped in the code
+
+**Conversion path.** Order buttons render inline beneath the size picker; the fixed bar is
+mobile-only and mounts only once the buying controls scroll away. The WhatsApp CTA is a
+real `<button>`, WhatsApp-green from first paint — it was an `<a>` with no `href` while no
+size was picked, which maps to role `generic`, ignores `aria-disabled` and takes no focus,
+so **the action row had zero tabbable elements until a size existed**. Pressing an action
+with no size now announces "Pick a size first" and moves focus to the first size pill. The
+Add button carries its own transient confirmation. New size guide with separate
+current-season and retro tables, reusing CartPanel's modal mechanics rather than inventing
+a second pattern.
+
+**WhatsApp message.** Every line now carries its product URL, and the order ends with a
+`Name: / Area: / Phone:` block — the three things the shop was asking for by hand on every
+single order. `tests/whatsapp.test.ts` had a deliberate "still carries no page link"
+assertion; it was inverted, not deleted.
+
+**Findability.** All/Current/Retro era chips (shown only where a list holds both), sort
+(price/name, applied *within* the in-stock grouping), a team `<select>` past the 24-chip
+cap so `/kits` and `/kits/retro-kits` finally get that facet, header search → `/kits?q=`,
+and nav links that no longer wrap.
+
+**Trust.** `src/lib/shop-info.ts` and `src/lib/sizing.ts` are the single source of truth
+for delivery/exchange/sizing copy — the product page, `/faq`, `/contact` and `/terms` all
+read from them so they cannot drift. New `/faq /about /contact /privacy /terms`. Mystery
+boxes now state the saving, the pool, one guarantee and one exclusion.
+
+**Performance.** Storefront HTML is cached rather than re-rendered per request. Product
+cards no longer prefetch; the grid renders 48 at a time instead of 687; focus rings raised
+from ~2.3:1 to full-strength navy.
+
+### 4. Owner decisions taken this session
+
+Recorded because they are facts about the business, not about the code, and they now live
+in `src/lib/shop-info.ts`:
+
+- **Delivery takes about two weeks**, because kits are ordered from the supplier **in
+  batches, not per customer** — which is what keeps the prices where they are. This was
+  true before and stated nowhere; it is now the first thing the product page says.
+- **Free delivery in Beirut, $3 elsewhere in Lebanon**, cash on delivery.
+- **Size exchange within 3 days**, unworn with tags. No refunds.
+- **Mystery boxes**: your size guaranteed, never a goalkeeper kit.
+
+### 5. Deviations from the plan, and why
+
+- **`/kits` no longer shuffles server-side.** An explicit "Newest" sort has to be able to
+  recover arrival order, which a shuffle applied before the filter panel had already
+  destroyed. Mixing moved into `CatalogFilters` behind a `mixed` prop.
+- **Pagination is a "Show more" reveal, not numbered pages.** Filtering here is instant and
+  local; a page control would reset the grid on every keystroke. Same goal met — 48 cards
+  rendered instead of 687.
+- **The desktop nav moved from `lg:` to `xl:`.** Measured, the row is **908px** wide
+  against **947px** of available space at 1280px. It cannot fit at 1024px at any padding,
+  so below xl the drawer — already built — is the honest answer. Group labels are shortened
+  for the header only (`NAV_GROUP_SHORT_LABELS`); `/admin` keeps the long forms. The nav
+  also carries `overflow-x-auto` as a safety valve, since 39px of headroom is thin.
+- **Section pages are prerendered** via `generateStaticParams` — not in the plan, but E2
+  made it free.
+
+### 6. ⛔ Why it is not deployed — Netlify build minutes
+
+`master` is pushed and correct. Netlify has not built it.
+
+- Published deploy is still **2026-08-05, commit `866af70`** — the pre-merge master HEAD.
+- **No failed Netlify deploy record exists.** That distinction matters: a build that ran
+  and failed would leave a deploy in `error` state. Nothing was created at all, which is
+  the signature of builds being blocked *before they start* — i.e. an account-level quota,
+  not a broken webhook.
+- Team is on the **Free** plan (`type_name: "Free"`) = **300 build minutes/month**.
+  Deploys stopped abruptly on Aug 5, mid-cycle. The team was created 20 March, so the
+  cycle appears to roll on the 20th.
+- The terminology, since it was asked: Netlify calls these **build minutes**, shown under
+  **Usage** on the billing page. Bandwidth (100 GB/month) is metered separately.
+
+**Route that consumes no build minutes**, if you want it live before the reset — Netlify
+only meters builds run on *their* infrastructure, so building locally and uploading the
+output is free:
+
+```bash
+npm run build
+npx netlify-cli login          # interactive; run it yourself with a ! prefix
+npx netlify-cli deploy --prod --no-build
+```
+
+The production build was verified clean on the owner's machine this session, so this is
+viable today.
+
+### 7. Post-deploy checks (do these once it is live)
+
+- `/faq` returns 200 (the tell that the new build is live).
+- At 375×812: the order bar never covers the size pills at any scroll position, and it
+  clears the home indicator.
+- At 1280×720+: no fixed bar at all, and the nav sits on one line.
+- Tab through a kit page **before** picking a size — the WhatsApp CTA must be reachable.
+- Add two kits, open the WhatsApp link, confirm both product URLs and the Name/Area/Phone
+  block are present and correctly encoded.
+- `/kits/premier-league` shows 124 kits with working Current/Retro chips.
+- Watch the first Netlify build: one local build in five crashed with a Windows worker
+  fault (`3221226505`) while prerendering 43 pages. Four were clean and it never
+  reproduced; Netlify builds on Linux so it is probably local-only, but this is the first
+  deploy that prerenders that many pages.
+
+### 8. Also open — **CI is red on master, and it is not from this work**
+
+The `build` check fails at the **Dependency audit** step (`npm run audit:launch`) on four
+unacknowledged advisories: `brace-expansion` (high, GHSA-rgw5-rvv9-x895), `js-yaml` (high,
+GHSA-5p4m-2wfm-xmqj), `nanoid` (high, GHSA-2v37-7h3g-55p8), `postcss` (moderate,
+GHSA-fxqj-rqcc-2cmp).
+
+**Verified pre-existing**, not caused by the merge: `git diff 866af70..4d7aace --
+package.json package-lock.json` is empty, and running the same audit on the **pre-merge**
+commit produces the identical failure. This is the same gate described in the 2026-07-27
+entry §3, now tripping on four newly-published advisories rather than the two already in
+`ACKNOWLEDGED`. It does **not** block deploys — `netlify.toml` has no CI gating, and a
+Netlify build runs `npm run build`, which never invokes the audit.
+
+Three ways forward, none taken yet because it is a security judgement call: leave it,
+attempt real upgrades via `npm audit fix` (they are all transitive, so some may have no fix
+Next 16 accepts), or add reviewed `ACKNOWLEDGED` entries in `scripts/audit-launch.mjs` with
+a reason and recheck trigger, per the existing convention.
+
+**Rollback SQL** for §2, preserved here since the scratchpad copy will not survive:
+
+```sql
+-- Undo the retro league tagging. Strips league slugs from retro rows ONLY.
+-- Deliberately not a blanket reset: 40 retro shirts legitimately sit in country
+-- sections too, and a reset would silently delete those.
+update public.products p
+set sections = coalesce((
+  select array_agg(s order by ord)
+  from unnest(p.sections) with ordinality as t(s, ord)
+  where s <> all(array[
+    'champions-league','europa-league','premier-league','la-liga','serie-a',
+    'bundesliga','ligue-1','primeira-liga','eredivisie','saudi-pro-league','mls'])
+), array[]::text[])
+where 'retro-kits' = any(p.sections)
+  and p.sections && array[
+    'champions-league','europa-league','premier-league','la-liga','serie-a',
+    'bundesliga','ligue-1','primeira-liga','eredivisie','saudi-pro-league','mls'];
+
+-- Undo the season backfill. Removes " 25/26 " only where doing so leaves a name
+-- with no digits at all -- exactly the population the migration touched.
+update public.products
+set name = team || ' ' || substring(name from length(team) + 8)
+where '25-26-kits' = any(sections)
+  and left(name, length(team) + 7) = team || ' 25/26 '
+  and (team || ' ' || substring(name from length(team) + 8)) !~ '[0-9]';
+```
+
+### 9. Current state of production, in the meantime
+
+Live and selling on the Aug 5 build. `/`, `/kits` and `/kits/premier-league` all return
+200. Because the migrations are already applied, league pages **already** show the newly
+tagged retro shirts — `/kits/premier-league` serves 124 kits — but the era chips that make
+that navigable ship with the deploy. Nothing is broken; those pages are just busier than
+they were. `/kits/retro-kits` was slow enough to time out a 2-minute curl, which is the
+368-card page on the uncached build and precisely what the caching work fixes.
+
+---
+
 ## 2026-07-27 (evening) — Codex review applied, migrations run, branches consolidated
 
 **Participants:** Nadim (owner) + Codex (review) + Claude Code (Opus 5)
