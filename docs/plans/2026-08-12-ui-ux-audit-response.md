@@ -2,10 +2,19 @@
 
 **Status:** built on branch `feat/audit-response`, 2026-08-13. Written 2026-08-12.
 
-> **Phases B, C, D and E are done and verified.** Phase A is written as two
-> migrations in `supabase/migrations/` but **deliberately not applied** — they
-> rewrite production rows, and no branch can insulate the shared database from
-> that. Applying them is a separate, explicit decision.
+> **All five phases are done and verified.** Phase A was applied to production on
+> 2026-08-13 on the owner's instruction, after a read-only dry run confirmed every
+> figure below. Post-migration counts came out exactly as predicted:
+> `retro ∩ leagues` 0 → 233, `/kits/premier-league` 67 → 124, seasonless names
+> 154 → 16, with no duplicate slugs, nothing over the 12-slug cap, and the 40
+> retro∩country memberships untouched.
+>
+> Rollback SQL for both is in the session scratchpad. It is exact rather than
+> approximate, because the preconditions were verified immediately before the
+> writes: every tagged row was `{retro-kits, club-kits}` beforehand, and every
+> renamed row contained no digit at all. Note the retro rollback must strip only
+> the 11 league slugs — a blanket reset would delete 40 legitimate country
+> memberships.
 >
 > Changes made to the plan while building it, and why:
 > - **`/kits` no longer shuffles server-side.** An explicit "Newest" sort has to

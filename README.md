@@ -98,16 +98,18 @@ approximate. Replace them with measured figures when a batch has actually been m
 verified in production** — see the header in that file. It is saved as `.sql.txt` so it is
 not applied by accident.
 
-Two migrations dated 2026-08-13 are committed but **not yet applied to production**. Both
-rewrite existing rows and both are idempotent, so a re-run is a no-op:
+Two data migrations were **applied to production on 2026-08-13**. Both are idempotent, so a
+re-run is a no-op:
 
-- `20260813120000_tag_retro_kits_into_leagues.sql` — 233 retro shirts gain the league
+- `20260813104713_tag_retro_kits_into_leagues.sql` — 233 retro shirts gained the league
   sections their modern counterparts already sit in. Before it, `retro-kits ∩ any league
   section` was exactly 0, so all 368 retro kits were unreachable from any league page.
-- `20260813121000_backfill_25_26_season_into_names.sql` — inserts `25/26` into the 138 kit
-  names that predate the season-in-the-name convention.
+  `/kits/premier-league` went from 67 kits to 124.
+- `20260813104738_backfill_25_26_season_into_names.sql` — inserted `25/26` into the 138 kit
+  names that predated the season-in-the-name convention. The 15 `world-cup-2026` national
+  shirts and the legacy mystery row were deliberately left alone; they have no season.
 
-After applying either, the storefront can serve stale HTML for up to five minutes unless the
+After a data migration the storefront can serve stale HTML for up to five minutes unless the
 tag purge is triggered (any save in `/admin` does it).
 
 ## Local development
