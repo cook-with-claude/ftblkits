@@ -37,6 +37,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // The information pages are static and rarely change, but /faq is the answer
+  // to "how long does delivery take" — a query people genuinely search for
+  // before they buy from a shop they do not know.
+  const infoUrls: MetadataRoute.Sitemap = ["/faq", "/about", "/contact", "/privacy", "/terms"].map(
+    (path) => ({
+      url: `${SITE_URL}${path}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: path === "/faq" ? 0.6 : 0.3,
+    }),
+  );
+
   return [
     {
       url: SITE_URL,
@@ -52,5 +64,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...sectionUrls,
     ...jerseyUrls,
+    ...infoUrls,
   ];
 }

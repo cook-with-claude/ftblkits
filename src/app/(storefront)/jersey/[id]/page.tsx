@@ -5,7 +5,20 @@ import type { Metadata } from "next";
 import { SizePicker } from "@/components/SizePicker";
 import { MysteryVisual } from "@/components/MysteryVisual";
 import { getProductById } from "@/lib/supabase/queries";
-import { getMysteryProductMeta, mysteryKitDescription } from "@/lib/mystery";
+import {
+  getMysteryProductMeta,
+  mysteryKitDescription,
+  mysteryPoolLine,
+  mysterySaving,
+  MYSTERY_EXCLUSION,
+  MYSTERY_GUARANTEE,
+} from "@/lib/mystery";
+import {
+  DELIVERY_SHORT,
+  EXCHANGE_SHORT,
+  LEAD_TIME_SHORT,
+  PHONE_DISPLAY,
+} from "@/lib/shop-info";
 
 export const dynamic = "force-dynamic";
 
@@ -126,8 +139,17 @@ export default async function JerseyPage({
               </p>
             )}
 
-            {product.isMystery && (
+            {product.isMystery && mysteryMeta && (
               <>
+                {/* The saving was the whole commercial argument for this tier
+                    and appeared nowhere: a shopper had no way to tell whether
+                    $26.99 was a deal or a markup on an unknown shirt. */}
+                <p className="mt-4 rounded-xl border border-gz-magenta/30 bg-gz-bg-alt px-3 py-2.5 text-sm font-bold text-gz-navy">
+                  ${mysterySaving(mysteryMeta.theme).amount.toFixed(2)} less than the same shirt
+                  bought outright (${mysterySaving(mysteryMeta.theme).comparedTo}) —{" "}
+                  {mysterySaving(mysteryMeta.theme).percent}% off for letting us choose.
+                </p>
+
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   {["Replica kit", "Your size", "Surprise pick"].map((item) => (
                     <span
@@ -138,6 +160,22 @@ export default async function JerseyPage({
                     </span>
                   ))}
                 </div>
+
+                {/* What the pool is, what is promised, what is ruled out. */}
+                <dl className="mt-5 space-y-3 text-sm leading-relaxed">
+                  {[
+                    { term: "What you could get", detail: mysteryPoolLine(mysteryMeta.theme) },
+                    { term: "What we guarantee", detail: MYSTERY_GUARANTEE },
+                    { term: "What it is never", detail: MYSTERY_EXCLUSION },
+                  ].map((row) => (
+                    <div key={row.term}>
+                      <dt className="text-xs font-extrabold uppercase tracking-widest text-gz-muted">
+                        {row.term}
+                      </dt>
+                      <dd className="mt-0.5 text-gz-body">{row.detail}</dd>
+                    </div>
+                  ))}
+                </dl>
 
                 <ol className="mt-5 space-y-2.5">
                   {[
@@ -159,8 +197,36 @@ export default async function JerseyPage({
             <SizePicker product={product} />
 
             <div className="mt-6 h-1 w-16 rounded-full gz-flag-gradient" aria-hidden="true" />
+
+            {/* The three things a first-time buyer asks before they will press
+                send, answered before they have to ask. The delivery window
+                leads: two weeks is a long time to find out about afterwards,
+                and saying it plainly costs less trust than discovering it in
+                the chat does. */}
+            <dl className="mt-4 space-y-2.5 text-sm">
+              {[
+                { term: "Delivery", detail: `${LEAD_TIME_SHORT} — we order from our supplier in batches` },
+                { term: "Cost", detail: DELIVERY_SHORT + ", paid cash on delivery" },
+                { term: "If it doesn't fit", detail: EXCHANGE_SHORT + ", unworn with tags" },
+              ].map((row) => (
+                <div key={row.term} className="flex gap-2.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 h-4 w-4 shrink-0 text-gz-green" aria-hidden="true">
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div>
+                    <dt className="inline font-bold text-gz-navy">{row.term}: </dt>
+                    <dd className="inline text-gz-body">{row.detail}</dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
+
             <p className="mt-4 text-xs leading-relaxed text-gz-muted">
-              Cash on delivery across Lebanon · Order &amp; confirm sizing on WhatsApp.
+              Questions about fit or timing?{" "}
+              <Link href="/faq" className="cursor-pointer font-bold text-gz-navy underline hover:text-gz-red">
+                Read the FAQ
+              </Link>{" "}
+              or message us on {PHONE_DISPLAY}.
             </p>
           </div>
         </div>

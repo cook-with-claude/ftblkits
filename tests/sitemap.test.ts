@@ -81,11 +81,24 @@ describe("sitemap freshness", () => {
     expect(urls).not.toContain("https://goalzone.example/kits/mls");
   });
 
-  it("still lists the home and browse-all routes when nothing is stocked", async () => {
+  it("still lists the home, browse-all and information routes when nothing is stocked", async () => {
     mocks.getAllProducts.mockResolvedValueOnce({ status: "ok", products: [] });
     mocks.getSections.mockResolvedValueOnce({ status: "ok", sections: [section("mls")] });
 
     const urls = (await sitemap()).map((entry) => entry.url);
-    expect(urls).toEqual(["https://goalzone.example", "https://goalzone.example/kits"]);
+    // The information pages are static prose and do not depend on stock, so
+    // they belong here whatever the catalogue is doing. What must stay out is
+    // anything catalog-derived.
+    expect(urls).toEqual([
+      "https://goalzone.example",
+      "https://goalzone.example/kits",
+      "https://goalzone.example/faq",
+      "https://goalzone.example/about",
+      "https://goalzone.example/contact",
+      "https://goalzone.example/privacy",
+      "https://goalzone.example/terms",
+    ]);
+    expect(urls.some((url) => url.includes("/kits/"))).toBe(false);
+    expect(urls.some((url) => url.includes("/jersey/"))).toBe(false);
   });
 });
