@@ -21,11 +21,19 @@ export async function generateMetadata({
   if (result.status === "unavailable") return { title: "Catalog temporarily unavailable" };
 
   const section = result.section;
+  const title = `${section.label} | The Goal Zone`;
+  const url = `/kits/${section.slug}`;
+  const description =
+    section.description ?? `Replica ${section.label} football kits in Beirut. Order on WhatsApp.`;
+
   return {
     title: section.label,
-    description:
-      section.description ?? `Replica ${section.label} football kits in Beirut. Order on WhatsApp.`,
-    alternates: { canonical: `/kits/${section.slug}` },
+    description,
+    alternates: { canonical: url },
+    // Restated rather than inherited: Next replaces openGraph/twitter per route,
+    // so without these a shared section link unfurls as the homepage.
+    openGraph: { title, description, type: "website", url, images: ["/logo.jpeg"] },
+    twitter: { card: "summary_large_image", title, description, images: ["/logo.jpeg"] },
   };
 }
 
@@ -101,7 +109,7 @@ export default async function SectionPage({
                 key={item.id}
                 href={sectionHref(item.slug)}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-extrabold uppercase tracking-wide transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/30 ${
+                className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-extrabold uppercase tracking-wide transition-colors gz-base ease-gz-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy ${
                   active
                     ? "border-gz-navy bg-gz-navy text-white"
                     : "border-gz-border bg-gz-surface text-gz-navy hover:border-gz-navy/35 hover:bg-gz-bg-alt"

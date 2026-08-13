@@ -34,6 +34,19 @@ export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   mystery: "Mystery Boxes",
 };
 
+// What the storefront header renders. The long forms above read better in
+// /admin, where a settings row has all the width it wants; across a nav bar
+// that also carries nine top-level items they were the single biggest reason
+// the row could not fit on one line at any viewport width.
+export const NAV_GROUP_SHORT_LABELS: Record<NavGroup, string> = {
+  featured: "Featured",
+  type: "Browse",
+  league: "Leagues",
+  country: "Countries",
+  club: "Clubs",
+  mystery: "Mystery",
+};
+
 // Lowercase, digits, single hyphens between segments. Enforced here and by a
 // CHECK constraint in the database. This is not cosmetic: the slug is both a URL
 // path segment and a PostgREST filter value (`sections=cs.{slug}`), so a slug

@@ -1,5 +1,10 @@
 // Pure cart logic — no React, no storage, no Supabase, so it stays trivially
 // unit-testable. Same character as src/lib/catalog.ts.
+//
+// SITE_URL is the one import, and it is a plain string derived from env with a
+// safe fallback, so this file stays pure and the tests stay deterministic.
+
+import { SITE_URL } from "@/lib/config";
 
 export const MAX_LINE_QUANTITY = 99;
 
@@ -118,26 +123,54 @@ export function parseCart(raw: unknown): CartLine[] {
 export const CART_GREETING = "Hi GoalZone! I'd like to order:";
 
 /**
+ * The details every order needed anyway. Sent as blank fields rather than as a
+ * question, so the customer fills them in before the first reply instead of the
+ * shop opening each conversation by asking for the same three things.
+ */
+export const DELIVERY_PROMPT = ["To arrange delivery:", "Name:", "Area:", "Phone:"];
+
+/** The public page for a kit — what makes a forwarded order message clickable. */
+export function productUrl(id: string): string {
+  return `${SITE_URL}/jersey/${id}`;
+}
+
+/**
  * One message for the whole order.
  *
  * Prices are included here and on the single-kit path alike. They were removed
  * in June, but a multi-line order that never states a number is awkward for both
  * sides; the figure is a starting point the shop can still adjust in chat.
  *
+ * Each line now carries its product URL. The message is the only artefact that
+ * survives the handoff into WhatsApp: without a link, "Arsenal 25/26 Home" in a
+ * chat is a name the shop has to look up by hand, and a customer forwarding the
+ * order to a friend forwards nothing they can buy from. The id was already on
+ * the record, so this costs one string per line.
+ *
  * `trailingLines` exists for the referral/salesperson work, which appends
- * "Referred by:" / "Sold by:" once per order rather than once per line.
+ * "Referred by:" / "Sold by:" once per order rather than once per line — after
+ * the delivery block, so the fields the customer types into stay together.
  */
 export function buildCartMessage(lines: CartLine[], trailingLines: string[] = []): string {
   if (lines.length === 0) return "";
 
-  const body = lines.map((line) => {
+  const body = lines.flatMap((line) => {
     const lineTotal = formatPrice(cartTotal([line]));
-    const main = `${line.quantity}x ${line.name} — Size ${line.size} — ${lineTotal}`;
+    const out = [`${line.quantity}x ${line.name} — Size ${line.size} — ${lineTotal}`];
     const request = line.notes?.trim();
-    return request ? `${main}\n  Special request: ${request}` : main;
+    if (request) out.push(`  Special request: ${request}`);
+    out.push(`  ${productUrl(line.id)}`);
+    return out;
   });
 
-  const parts = [CART_GREETING, ...body, "", `Total: ${formatPrice(cartTotal(lines))}`];
+  const parts = [
+    CART_GREETING,
+    ...body,
+    "",
+    `Total: ${formatPrice(cartTotal(lines))}`,
+    "",
+    ...DELIVERY_PROMPT,
+  ];
   if (trailingLines.length > 0) parts.push("", ...trailingLines);
   return parts.join("\n");
 }

@@ -2,9 +2,10 @@ import { Skeleton } from "@/components/skeletons/Skeleton";
 
 export default function Loading() {
   return (
-    // pb-28 matches the real page: the order bar is fixed, and this is what
-    // keeps the last line of copy clear of it.
-    <div className="pb-28">
+    // Matches the real page: the order bar is a mobile-only overlay now, and
+    // only once the inline CTA has scrolled away, so the clearance it needs is
+    // gone above md.
+    <div className="pb-28 md:pb-12">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mt-5">
           <Skeleton className="h-5 w-20" />
@@ -26,7 +27,10 @@ export default function Loading() {
 
             {/* Size picker: label plus a row of size buttons. */}
             <div className="mt-6">
-              <Skeleton className="h-3.5 w-20" />
+              <div className="flex items-baseline justify-between gap-3">
+                <Skeleton className="h-3.5 w-20" />
+                <Skeleton className="h-3.5 w-16" />
+              </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {Array.from({ length: 5 }, (_, i) => (
                   <Skeleton key={i} className="h-12 w-14 rounded-xl" />
@@ -34,20 +38,16 @@ export default function Loading() {
               </div>
             </div>
 
+            {/* The order buttons sit inline under the picker now, so this is
+                where they belong in the skeleton — the fixed bar is no longer
+                part of the first paint. */}
+            <div className="mt-6 flex gap-2">
+              <Skeleton className="h-12 flex-1 rounded-full" />
+              <Skeleton className="h-12 flex-1 rounded-full" />
+            </div>
+
             <Skeleton className="mt-6 h-1 w-16 rounded-full" />
           </div>
-        </div>
-      </div>
-
-      {/* The fixed order bar is part of this page's furniture, so it is part of
-          the skeleton too — otherwise it pops in late over the content. */}
-      <div
-        className="fixed inset-x-0 bottom-0 border-t border-gz-border bg-gz-bg/95 p-4 backdrop-blur"
-        style={{ zIndex: "var(--gz-z-sticky)" }}
-      >
-        <div className="mx-auto flex max-w-6xl gap-2">
-          <Skeleton className="h-12 flex-1 rounded-full" />
-          <Skeleton className="h-12 flex-1 rounded-full" />
         </div>
       </div>
     </div>

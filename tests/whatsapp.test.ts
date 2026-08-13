@@ -35,7 +35,30 @@ describe("buildWhatsappLink", () => {
     expect(decodeURIComponent(url.split("?text=")[1])).toContain("2x Real Madrid Home");
   });
 
-  it("still carries no page link", () => {
-    expect(buildCartMessage([])).not.toContain("http");
+  // Inverted deliberately. This used to assert the message carried no page
+  // link, which was true and was the problem: the shop received kit names it
+  // then had to look up by hand, and a forwarded order led nowhere.
+  it("carries a clickable product link per kit, encoded", () => {
+    const lines: CartLine[] = [
+      {
+        id: "692f94a4-6ad5-47dd-a155-b6fd0199d514",
+        size: "M",
+        quantity: 1,
+        name: "Real Madrid Home",
+        team: "Real Madrid",
+        price: 30,
+        imageUrl: null,
+        isMystery: false,
+      },
+    ];
+    const url = buildWhatsappLink("9613123456", buildCartMessage(lines));
+    expect(url).not.toContain("\n");
+    expect(decodeURIComponent(url.split("?text=")[1])).toContain(
+      "/jersey/692f94a4-6ad5-47dd-a155-b6fd0199d514",
+    );
+  });
+
+  it("builds nothing at all for an empty cart, so there is no link to send", () => {
+    expect(buildCartMessage([])).toBe("");
   });
 });

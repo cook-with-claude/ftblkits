@@ -20,11 +20,27 @@ export async function generateMetadata({
   if (result.status === "unavailable") return { title: "Catalog temporarily unavailable" };
   const product = result.product;
   const title = `${product.name} — $${product.price}`;
+  const url = `/jersey/${product.id}`;
+  const images = product.imageUrl ? [product.imageUrl] : ["/logo.jpeg"];
+  // A kit with no description of its own still needs a sentence: this is what
+  // an unfurled WhatsApp share shows underneath the photo.
+  const description =
+    product.description ??
+    `${product.name} — replica ${product.team} kit, $${product.price}. Cash on delivery across Lebanon, ordered on WhatsApp.`;
+
   return {
     title,
-    description: product.description ?? undefined,
-    alternates: { canonical: `/jersey/${product.id}` },
-    openGraph: { title, images: product.imageUrl ? [product.imageUrl] : ["/logo.jpeg"] },
+    description,
+    alternates: { canonical: url },
+    // Next *replaces* openGraph rather than deep-merging it, so anything the
+    // root sets — description, type, url — is lost the moment a route declares
+    // its own. Each field has to be restated here or product shares unfurl with
+    // a bare title and image and nothing else.
+    openGraph: { title, description, type: "website", url, images },
+    // There were none of these anywhere in the repo. WhatsApp reads the
+    // OpenGraph tags, but every other share target that matters here — X,
+    // Telegram previews, Slack — prefers the Twitter card when one exists.
+    twitter: { card: "summary_large_image", title, description, images },
   };
 }
 
@@ -43,7 +59,9 @@ export default async function JerseyPage({
   const mysteryMeta = product.isMystery ? getMysteryProductMeta(product) : null;
 
   return (
-    <div className="pb-28">
+    // The order bar is a mobile-only overlay now, and only appears once the
+    // inline CTA has scrolled away, so above md there is nothing to clear.
+    <div className="pb-28 md:pb-12">
       <div className="mx-auto max-w-6xl px-4">
         <Link
           href={product.isMystery ? "/kits/mystery-boxes" : "/kits"}

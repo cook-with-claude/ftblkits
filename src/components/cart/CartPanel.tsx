@@ -122,7 +122,7 @@ export function CartPanel() {
             type="button"
             onClick={onClose}
             aria-label="Close cart"
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gz-border text-gz-navy transition-colors gz-base ease-gz-out hover:bg-gz-bg-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
@@ -212,7 +212,7 @@ export function CartPanel() {
                       <button
                         type="button"
                         onClick={() => remove(line.id, line.size)}
-                        className="min-h-11 cursor-pointer px-1 text-xs font-bold text-gz-red hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy/40"
+                        className="min-h-11 cursor-pointer px-1 text-xs font-bold text-gz-red hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gz-navy"
                       >
                         Remove
                       </button>

@@ -1,13 +1,63 @@
 import type { Product } from "@/lib/types";
+import { RETRO_SECTION_SLUG } from "@/lib/sizing";
 
 export function isSoldOut(product: Product): boolean {
   return !product.inStock;
+}
+
+// Retro membership is already on the record — `sections` is in the query's
+// COLUMNS and on the type — so filtering by era needs no new data, only a name.
+export type CatalogEra = "all" | "current" | "retro";
+
+export function isRetro(product: Product): boolean {
+  return product.sections.includes(RETRO_SECTION_SLUG);
+}
+
+/**
+ * True only when a list actually straddles both eras. The chips are pointless
+ * on /kits/retro-kits (all retro) and on /kits/26-27-kits (none), so the caller
+ * uses this to decide whether to render them at all.
+ */
+export function hasBothEras(products: Product[]): boolean {
+  let current = false;
+  let retro = false;
+  for (const p of products) {
+    if (isRetro(p)) retro = true;
+    else current = true;
+    if (current && retro) return true;
+  }
+  return false;
+}
+
+export type CatalogSort = "featured" | "newest" | "price-asc" | "price-desc" | "name";
+
+export const CATALOG_SORTS: { value: CatalogSort; label: string }[] = [
+  { value: "featured", label: "Featured" },
+  { value: "newest", label: "Newest" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "name", label: "Name: A–Z" },
+];
+
+export function isCatalogSort(value: string | null): value is CatalogSort {
+  return CATALOG_SORTS.some((s) => s.value === value);
+}
+
+export function isCatalogEra(value: string | null): value is CatalogEra {
+  return value === "all" || value === "current" || value === "retro";
 }
 
 export interface CatalogFilter {
   query: string;
   team?: string | null;
   inStockOnly?: boolean;
+  era?: CatalogEra;
+}
+
+// Sort is not a filter, but it belongs in the same shareable URL, so the one
+// builder owns both.
+export interface CatalogView extends CatalogFilter {
+  sort?: CatalogSort;
 }
 
 export interface CatalogFilterLocation {
@@ -20,7 +70,7 @@ export interface CatalogFilterLocation {
 // Unrelated query params and the current fragment are deliberately preserved.
 export function buildCatalogFilterUrl(
   location: CatalogFilterLocation,
-  filter: CatalogFilter,
+  filter: CatalogView,
 ): string {
   const params = new URLSearchParams(location.search);
   if (filter.query) params.set("q", filter.query);
@@ -29,6 +79,12 @@ export function buildCatalogFilterUrl(
   else params.delete("team");
   if (filter.inStockOnly) params.set("stock", "1");
   else params.delete("stock");
+  // "all" and "featured" are the defaults, so they stay out of the URL — a
+  // shared link should not carry params that change nothing.
+  if (filter.era && filter.era !== "all") params.set("era", filter.era);
+  else params.delete("era");
+  if (filter.sort && filter.sort !== "featured") params.set("sort", filter.sort);
+  else params.delete("sort");
 
   const search = params.toString();
   return `${location.pathname}${search ? `?${search}` : ""}${location.hash}`;
@@ -36,9 +92,11 @@ export function buildCatalogFilterUrl(
 
 export function filterProducts(products: Product[], filter: CatalogFilter): Product[] {
   const q = filter.query.trim().toLowerCase();
+  const era = filter.era ?? "all";
   return products.filter((p) => {
     if (filter.inStockOnly && !p.inStock) return false;
     if (filter.team && p.team !== filter.team) return false;
+    if (era !== "all" && isRetro(p) !== (era === "retro")) return false;
     if (q && !(p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))) {
       return false;
     }
@@ -46,9 +104,28 @@ export function filterProducts(products: Product[], filter: CatalogFilter): Prod
   });
 }
 
-// In-stock first; preserves incoming order within each group (DB returns newest first).
-export function sortProducts(products: Product[]): Product[] {
-  return [...products].sort((a, b) => (a.inStock === b.inStock ? 0 : a.inStock ? -1 : 1));
+// Applied *within* the in-stock grouping, never across it: a sold-out kit at
+// the top of a price sort is a worse result than a correct sort is a good one.
+const COMPARATORS: Record<CatalogSort, ((a: Product, b: Product) => number) | null> = {
+  // Both of these keep the incoming order, which is the caller's to decide:
+  // the DB returns newest first, and /kits hands over a deliberately mixed
+  // list so one import batch does not fill the first several screens.
+  featured: null,
+  newest: null,
+  "price-asc": (a, b) => a.price - b.price,
+  "price-desc": (a, b) => b.price - a.price,
+  name: (a, b) => a.name.localeCompare(b.name),
+};
+
+// In-stock first; preserves incoming order within each group unless an explicit
+// sort is asked for. Array.prototype.sort is stable, so "no comparator" really
+// does mean "leave this group alone".
+export function sortProducts(products: Product[], sort: CatalogSort = "featured"): Product[] {
+  const compare = COMPARATORS[sort];
+  return [...products].sort((a, b) => {
+    if (a.inStock !== b.inStock) return a.inStock ? -1 : 1;
+    return compare ? compare(a, b) : 0;
+  });
 }
 
 // FNV-1a over the id, then murmur3's finalizer. Cheap and dependency-free.

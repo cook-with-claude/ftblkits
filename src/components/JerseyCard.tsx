@@ -36,8 +36,13 @@ export function JerseyCard({
     // `translate` property, not to `transform`, so a list naming only
     // `transform` silently leaves the lift un-animated.
     <div className="gz-card group relative overflow-hidden rounded-2xl border border-gz-border bg-gz-surface transition-[transform,translate,box-shadow,border-color] gz-slow ease-gz-out hover:-translate-y-1.5 hover:border-gz-navy/30 hover:shadow-xl hover:shadow-gz-navy/15 focus-within:-translate-y-1.5 focus-within:border-gz-navy/30 focus-within:shadow-xl focus-within:shadow-gz-navy/15 active:translate-y-0 active:gz-fast">
+      {/* prefetch was set nowhere in the repo, so every card in a 687-card grid
+          queued a route prefetch as it entered the viewport. The ~42 category
+          links keep theirs — there are few of them and they are the likely next
+          click; a product card is one of hundreds and mostly is not. */}
       <Link
         href={`/jersey/${product.id}`}
+        prefetch={false}
         className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gz-navy"
       >
       <div className="relative aspect-square overflow-hidden bg-gz-navy-deep">
@@ -68,7 +73,11 @@ export function JerseyCard({
           </span>
         ) : (
           kind && (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-gz-navy-deep/45 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            // /45 over an arbitrary kit photo is not a scrim, it is a tint —
+            // white on a pale shirt fell well under the contrast floor. /90
+            // matches the "View kit" chip eight lines below, which was always
+            // the legible one.
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-gz-navy-deep/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
               {kind}
             </span>
           )
