@@ -4,6 +4,67 @@ A running, detailed log of work sessions. Newest entries at the top.
 
 ---
 
+## 2026-08-22 — The audit response is live. Footer no longer promotes one arbitrary country.
+
+**Participants:** Nadim (owner) + Claude Code (Opus 5)
+**Deploy:** ✅ **live.** Netlify build minutes reset; `master` built and published normally.
+
+### 1. Deployed
+
+Netlify's Free-plan cycle rolls on the 20th, as guessed on 08-13. A push to `master` on
+08-22 triggered a normal build that published in seconds — no need for the
+`deploy --prod --no-build` workaround, though a local `npm run build` was run first as a
+standby and succeeded (no repeat of the Windows worker fault seen one build in four).
+
+`/faq` was 404 before the push and 200 about 25 seconds after, which is exactly the tell
+§0 of the 08-13 entry said to use.
+
+Post-deploy checks, all passing: `/` `/kits` `/faq` `/about` `/contact` `/privacy`
+`/terms` `/kits/retro-kits` `/kits/premier-league` `/sitemap.xml` all 200; era chips, sort
+and team select render on `/kits` (686 kits · showing 48); per-product OG tags present on
+a jersey page; `/kits/premier-league` = 124 and `retro-kits` = 368, matching the migration
+predictions. The whole 08-13 backlog — conversion path, findability, trust pages,
+caching — went live in that one build.
+
+### 2. Footer: one arbitrary country was ranking as a top-level section
+
+Nadim spotted Argentina sitting in the footer's Shop column between National Teams and
+Champions League, which reads as an editorial pick. It was not one.
+
+The column took the first six sections by `sortOrder`. That number is unique only *within*
+a nav group, so five sections legitimately share `sortOrder: 10` — `mystery-boxes`,
+`champions-league`, `argentina`, `national-teams`, `world-cup-2026`. A global sort put
+whichever won the tiebreak into the footer. Brazil and England lost the same coin flip.
+
+`footerShortcuts()` in `src/lib/sections.ts` now selects by nav group — `featured`, then
+`type`, then the mystery umbrella alone — and excludes countries, leagues and clubs
+outright. Those are long lists the header dropdowns already own, and surfacing one
+arbitrary member of a list is the bug, not the fix. The column is now the top-level
+taxonomy and nothing else:
+
+    All Kits · World Cup 2026 · 26/27 Kits · 25/26 Kits
+    Retro Kits · National Teams · Club Kits · All Mystery Boxes
+
+Five tests pin it, built on the real tie-at-10 shape from the live table; one asserts no
+single country, league or club can reach the footer again. 247/247 pass. Shipped as
+`6a8a90b`, live and verified in the same session.
+
+### 3. Open question, deliberately not built
+
+Nadim asked whether the size guide covers **player vs fan versions**. It does not, and the
+concept exists nowhere: no `version` column on `products` (columns are `country`,
+`created_at`, `description`, `hidden`, `id`, `image_url`, `in_stock`, `is_mystery`,
+`name`, `price`, `sections`, `sizes`, `team`), and zero product names match
+player/fan/authentic. The size guide splits on cut era — current-season vs retro — not on
+version.
+
+Nadim chose to defer it. If it comes back: the cheap version is one line in the size guide
+saying every shirt is fan version. The real version needs a `version` field, a picker on
+the product page, a third size table for the slimmer player cut, and touches the WhatsApp
+message and the admin panel.
+
+---
+
 ## 2026-08-13 — UI/UX audit response built, merged and applied. **Awaiting Netlify build minutes.**
 
 **Participants:** Nadim (owner) + Claude Code (Opus 5)
