@@ -121,3 +121,43 @@ export function groupSections(sections: Section[]): NavGroupModel[] {
     sections: byOrder.filter((s) => s.navGroup === group),
   })).filter((g) => g.sections.length > 0);
 }
+
+// The footer's Shop column. Deliberately not "the first N by sortOrder": that
+// number is only unique *within* a nav group — five sections share sortOrder 10
+// — so a global sort put whichever of them won the tiebreak into the footer.
+// That is how a single country, Argentina, ended up listed beside National
+// Teams and Champions League while Brazil and England did not.
+//
+// The column shows top-level destinations only. Countries, leagues and clubs
+// are long lists the header dropdowns already own, and surfacing one arbitrary
+// member of a list reads as an editorial pick that nobody made.
+const FOOTER_GROUP_RANK: Partial<Record<NavGroup, number>> = {
+  featured: 0,
+  type: 1,
+  mystery: 2,
+};
+
+// The mystery group holds one umbrella section plus four per-category boxes;
+// only the umbrella belongs in a shortcut list.
+const MYSTERY_UMBRELLA_SLUG = "mystery-boxes";
+
+export const FOOTER_SHORTCUT_LIMIT = 7;
+
+export function footerShortcuts(
+  sections: Section[],
+  limit: number = FOOTER_SHORTCUT_LIMIT,
+): Section[] {
+  return sections
+    .filter((s) => {
+      const rank = FOOTER_GROUP_RANK[s.navGroup];
+      if (rank === undefined) return false;
+      return s.navGroup !== "mystery" || s.slug === MYSTERY_UMBRELLA_SLUG;
+    })
+    .sort(
+      (a, b) =>
+        FOOTER_GROUP_RANK[a.navGroup]! - FOOTER_GROUP_RANK[b.navGroup]! ||
+        a.sortOrder - b.sortOrder ||
+        a.label.localeCompare(b.label),
+    )
+    .slice(0, limit);
+}

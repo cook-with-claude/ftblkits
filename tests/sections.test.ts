@@ -8,6 +8,7 @@ import {
   renameSectionMembership,
   isNavGroup,
   isValidAccent,
+  footerShortcuts,
   NAV_GROUPS,
   RESERVED_SECTION_SLUGS,
   type Section,
@@ -185,5 +186,67 @@ describe("groupSections", () => {
     const input = [...sections];
     groupSections(input);
     expect(input.map((s) => s.id)).toEqual(sections.map((s) => s.id));
+  });
+});
+
+describe("footerShortcuts", () => {
+  // The real shape of the section table: sortOrder is unique only *within* a
+  // nav group, so five sections legitimately share sortOrder 10.
+  const live = [
+    make({ id: "1", slug: "mystery-boxes", label: "All Mystery Boxes", navGroup: "mystery", sortOrder: 10 }),
+    make({ id: "2", slug: "champions-league", label: "Champions League", navGroup: "league", sortOrder: 10 }),
+    make({ id: "3", slug: "argentina", label: "Argentina", navGroup: "country", sortOrder: 10 }),
+    make({ id: "4", slug: "national-teams", label: "National Teams", navGroup: "type", sortOrder: 10 }),
+    make({ id: "5", slug: "world-cup-2026", label: "World Cup 2026", navGroup: "featured", sortOrder: 10 }),
+    make({ id: "6", slug: "26-27-kits", label: "26/27 Kits", navGroup: "featured", sortOrder: 15 }),
+    make({ id: "7", slug: "25-26-kits", label: "25/26 Kits", navGroup: "featured", sortOrder: 20 }),
+    make({ id: "8", slug: "club-kits", label: "Club Kits", navGroup: "type", sortOrder: 20 }),
+    make({ id: "9", slug: "brazil", label: "Brazil", navGroup: "country", sortOrder: 20 }),
+    make({ id: "10", slug: "retro-kits", label: "Retro Kits", navGroup: "featured", sortOrder: 30 }),
+    make({ id: "11", slug: "premier-league", label: "Premier League", navGroup: "league", sortOrder: 30 }),
+    make({ id: "12", slug: "club-mystery-boxes", label: "Club Mystery Boxes", navGroup: "mystery", sortOrder: 30 }),
+  ];
+
+  it("lists top-level destinations, featured first, then type, then mystery", () => {
+    expect(footerShortcuts(live).map((s) => s.slug)).toEqual([
+      "world-cup-2026",
+      "26-27-kits",
+      "25-26-kits",
+      "retro-kits",
+      "national-teams",
+      "club-kits",
+      "mystery-boxes",
+    ]);
+  });
+
+  // The bug this function exists to prevent: a global sort by sortOrder put
+  // whichever section won the tie at 10 into the footer, which is how one
+  // country appeared beside National Teams while Brazil and England did not.
+  it("never surfaces a single country, league or club", () => {
+    const slugs = footerShortcuts(live).map((s) => s.slug);
+    expect(slugs).not.toContain("argentina");
+    expect(slugs).not.toContain("brazil");
+    expect(slugs).not.toContain("champions-league");
+    expect(slugs).not.toContain("premier-league");
+  });
+
+  it("takes only the mystery umbrella, not the per-category boxes", () => {
+    const mystery = footerShortcuts(live).filter((s) => s.navGroup === "mystery");
+    expect(mystery.map((s) => s.slug)).toEqual(["mystery-boxes"]);
+  });
+
+  it("respects the limit and survives an empty section list", () => {
+    expect(footerShortcuts(live, 3).map((s) => s.slug)).toEqual([
+      "world-cup-2026",
+      "26-27-kits",
+      "25-26-kits",
+    ]);
+    expect(footerShortcuts([])).toEqual([]);
+  });
+
+  it("does not mutate the input", () => {
+    const input = [...live];
+    footerShortcuts(input);
+    expect(input.map((s) => s.id)).toEqual(live.map((s) => s.id));
   });
 });

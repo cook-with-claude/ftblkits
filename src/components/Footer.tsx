@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SocialLinks } from "@/components/SocialLinks";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { buildWhatsappLink } from "@/lib/whatsapp";
-import { sectionHref, type Section } from "@/lib/sections";
+import { footerShortcuts, sectionHref, type Section } from "@/lib/sections";
 import { DELIVERY_SHORT, LEAD_TIME_SHORT, PHONE_DISPLAY } from "@/lib/shop-info";
 
 const waLink = buildWhatsappLink(WHATSAPP_NUMBER, "Hi GoalZone! I'd like to order a kit.");
@@ -21,7 +21,7 @@ const INFO_LINKS = [
 export function Footer({ sections = [] }: { sections?: Section[] }) {
   // A short list only — the header already carries the full taxonomy. This is
   // here for internal linking and as a fallback if the nav is missed.
-  const shortcuts = [...sections].sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 6);
+  const shortcuts = footerShortcuts(sections);
 
   return (
     <footer className="border-t border-gz-border bg-gz-bg-alt">
